@@ -44,11 +44,10 @@ import (
 )
 
 func main() {
-    // Create a basic PID controller
-    controller := pid.New(1.0, 0.1, 0.05)
-    
-    // Set output limits (optional)
-    controller.SetOutputLimits(-100, 100)
+    // Create a basic PID controller with output limits
+    controller := pid.New(1.0, 0.1, 0.05,
+        pid.WithOutputLimits(-100, 100), // Set output limits during initialization
+    )
     
     // Control loop
     setpoint := 50.0
@@ -135,7 +134,13 @@ Returns the current PID gains.
 
 ### Output Control
 
-#### `SetOutputLimits(min, max float64)`
+```go
+// Option function
+pid.WithOutputLimits(min, max float64) // Set output limits during initialization
+
+// Runtime method
+controller.SetOutputLimits(min, max float64) // Set output limits after creation
+```
 
 Sets the minimum and maximum output values with anti-windup protection.
 

@@ -99,6 +99,16 @@ func WithDerivativeFilter(alpha float64) Option {
 	}
 }
 
+// WithOutputLimits sets the minimum and maximum output limits
+func WithOutputLimits(min, max float64) Option {
+	return func(p *PID) {
+		if min <= max {
+			p.outputMin = min
+			p.outputMax = max
+		}
+	}
+}
+
 // SetOutputLimits sets the minimum and maximum output values
 func (p *PID) SetOutputLimits(min, max float64) {
 	if min > max {

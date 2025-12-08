@@ -60,19 +60,18 @@ func main() {
 	fmt.Println("==============================")
 	fmt.Println()
 
-	// Create PID controller with moderate gains
-	controller := pid.New(2.0, 0.5, 0.1)
-
-	// Set reasonable output limits
-	controller.SetOutputLimits(-10.0, 10.0)
+	// Create PID controller with moderate gains and output limits
+	controller := pid.New(2.0, 0.5, 0.1,
+		pid.WithOutputLimits(-10.0, 10.0), // Set reasonable output limits during initialization
+	)
 
 	// Create a simulated system (time constant = 0.5 seconds)
 	system := NewSimulatedSystem(0.5)
 
 	// Control parameters
-	setpoint := 5.0          // Desired position
-	duration := 10.0         // Run for 10 seconds
-	updateRate := 50         // 50Hz update rate
+	setpoint := 5.0  // Desired position
+	duration := 10.0 // Run for 10 seconds
+	updateRate := 50 // 50Hz update rate
 	interval := time.Duration(1000/updateRate) * time.Millisecond
 
 	fmt.Printf("Setpoint: %.1f\n", setpoint)
@@ -83,37 +82,37 @@ func main() {
 	fmt.Println("----\t--------\t--------\t-----\t------")
 
 	startTime := time.Now()
-	
+
 	for time.Since(startTime).Seconds() < duration {
 		// Get current position from system
 		position := system.GetPosition()
-		
+
 		// Calculate error
 		error := setpoint - position
-		
+
 		// Update PID controller
 		output := controller.Update(error)
-		
+
 		// Apply control to system
 		system.ApplyControl(output)
-		
+
 		// Print status every 0.2 seconds for readability
 		elapsed := time.Since(startTime).Seconds()
 		if math.Mod(elapsed, 0.2) < float64(interval.Seconds()) {
-			fmt.Printf("%.2f\t%.2f\t\t%.3f\t\t%.3f\t%.3f\n", 
+			fmt.Printf("%.2f\t%.2f\t\t%.3f\t\t%.3f\t%.3f\n",
 				elapsed, setpoint, position, error, output)
 		}
-		
+
 		time.Sleep(interval)
 	}
 
 	fmt.Println()
-	fmt.Printf("Final position: %.3f (error: %.3f)\n", 
+	fmt.Printf("Final position: %.3f (error: %.3f)\n",
 		system.GetPosition(), setpoint-system.GetPosition())
-	
+
 	// Display controller gains
 	kp, ki, kd := controller.GetGains()
 	fmt.Printf("Controller gains - Kp: %.1f, Ki: %.1f, Kd: %.1f\n", kp, ki, kd)
-	
+
 	fmt.Printf("Final integral value: %.3f\n", controller.GetIntegral())
 }

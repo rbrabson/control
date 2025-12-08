@@ -146,6 +146,33 @@ func TestWithDerivativeFilter(t *testing.T) {
 	}
 }
 
+func TestWithOutputLimits(t *testing.T) {
+	tests := []struct {
+		name        string
+		min         float64
+		max         float64
+		expectedMin float64
+		expectedMax float64
+	}{
+		{"Valid limits", -10.0, 10.0, -10.0, 10.0},
+		{"Invalid limits (min > max)", 10.0, -10.0, math.Inf(-1), math.Inf(1)}, // Should not change from defaults
+		{"Zero limits", 0.0, 0.0, 0.0, 0.0},
+		{"Negative limits", -5.0, -1.0, -5.0, -1.0},
+		{"Positive limits", 1.0, 5.0, 1.0, 5.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pid := New(1.0, 0.1, 0.05, WithOutputLimits(tt.min, tt.max))
+
+			if pid.outputMin != tt.expectedMin || pid.outputMax != tt.expectedMax {
+				t.Errorf("Expected limits (%f, %f), got (%f, %f)",
+					tt.expectedMin, tt.expectedMax, pid.outputMin, pid.outputMax)
+			}
+		})
+	}
+}
+
 func TestSetOutputLimits(t *testing.T) {
 	pid := New(1.0, 0.1, 0.05)
 

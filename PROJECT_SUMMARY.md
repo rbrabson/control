@@ -48,7 +48,7 @@ This project implements a comprehensive PID (Proportional-Integral-Derivative) c
 
 - **Speed**: ~64 nanoseconds per Update() call
 - **Memory**: Minimal allocation, optimized for embedded systems
-- **Test Coverage**: 92.1% with comprehensive edge case testing
+- **Test Coverage**: 94.0% with comprehensive edge case testing
 - **Stability**: Thoroughly tested with various scenarios
 
 ## 🧪 Test Coverage
