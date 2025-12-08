@@ -1,6 +1,6 @@
-# PID Controller Library
+# Control Systems Library
 
-A comprehensive, high-performance PID (Proportional-Integral-Derivative) controller implementation in Go with advanced features for robotics and control systems.
+A comprehensive control systems library in Go featuring PID controllers and feedback control implementations for robotics and industrial automation.
 
 ## Features
 
@@ -32,6 +32,27 @@ A comprehensive, high-performance PID (Proportional-Integral-Derivative) control
 go get github.com/rbrabson/control
 ```
 
+## Packages
+
+This library provides two main packages:
+
+### PID Package (`control/pid`)
+
+High-performance PID controller implementation with advanced features:
+
+- Proportional, Integral, and Derivative control
+- Feed-forward control and anti-windup protection
+- Configurable output limits and derivative filtering
+- Runtime parameter adjustment
+
+### Feedback Package (`control/feedback`)
+
+Flexible feedback control interfaces and implementations:
+
+- **Feedback Interface**: Common interface for all feedback controllers
+- **FullStateFeedback**: Multi-dimensional state feedback controller
+- **NoFeedback**: Null controller for open-loop operation
+
 ## Quick Start
 
 ```go
@@ -62,6 +83,39 @@ func main() {
         error := setpoint - measurement
         fmt.Printf("Error: %.2f, Output: %.2f\n", error, output)
         time.Sleep(10 * time.Millisecond)
+    }
+}
+```
+
+### Using Feedback Controllers
+
+```go
+package main
+
+import (
+    "fmt"
+    "control/feedback"
+)
+
+func main() {
+    // Full state feedback for [position, velocity] control
+    gains := feedback.Values{1.5, 0.3}
+    controller := feedback.NewFullStateFeedback(gains)
+    
+    // Control loop
+    setpoint := feedback.Values{10.0, 0.0}  // Target position=10, velocity=0
+    
+    for i := 0; i < 10; i++ {
+        // Current state [position, velocity]
+        current := feedback.Values{float64(i), 0.5}
+        
+        output, err := controller.Calculate(setpoint, current)
+        if err != nil {
+            fmt.Printf("Error: %v\n", err)
+            continue
+        }
+        
+        fmt.Printf("State: %v, Output: %.3f\n", current, output)
     }
 }
 ```
@@ -201,6 +255,85 @@ controller.SetDerivativeFilter(alpha float64)
 controller.GetDerivativeFilter() float64
 ```
 
+## Feedback Package API
+
+### Feedback Interface
+
+```go
+type Feedback interface {
+    Calculate(setpoint, measurement float64) float64
+}
+```
+
+The base interface that all feedback controllers implement.
+
+### FullStateFeedback
+
+Full state feedback controller for multi-dimensional control systems.
+
+#### FullStateFeedback Constructor
+
+```go
+func NewFullStateFeedback(gain Values) *FullStateFeedback
+```
+
+Creates a new full state feedback controller with specified gain vector.
+
+**Parameters:**
+
+- `gain`: Vector of gain values for each state variable
+
+#### Methods
+
+```go
+func (fsf *FullStateFeedback) Calculate(setpoint, measurement Values) (float64, error)
+```
+
+Computes control output based on full state feedback: u = K(r - x)
+
+**Parameters:**
+
+- `setpoint`: Reference state vector
+- `measurement`: Current state vector
+
+**Returns:**
+
+- Control output value
+- Error if vectors have different lengths
+
+#### Usage Example
+
+```go
+import "control/feedback"
+
+// Create gains for [position, velocity] state feedback
+gains := feedback.Values{2.0, 0.5}
+controller := feedback.NewFullStateFeedback(gains)
+
+// Control calculation
+setpoint := feedback.Values{10.0, 0.0}  // Target: position=10, velocity=0
+current := feedback.Values{8.5, 1.2}    // Current: position=8.5, velocity=1.2
+output, err := controller.Calculate(setpoint, current)
+if err != nil {
+    // Handle error (e.g., mismatched vector lengths)
+}
+```
+
+### NoFeedback
+
+Null feedback controller that returns zero output (open-loop operation).
+
+```go
+nf := &feedback.NoFeedback{}
+output := nf.Calculate(setpoint, measurement) // Always returns 0.0
+```
+
+### Types
+
+```go
+type Values []float64  // Vector type for multi-dimensional states
+```
+
 ## Use Cases
 
 ### Robotics Applications
@@ -291,10 +424,16 @@ go test ./pid -bench=.
 
 See the `examples/` directory for complete working examples:
 
+### PID Controller Examples
+
 - Basic PID control loop
-- Motor speed control
+- Motor speed control  
 - Temperature regulation
 - Position servo control
+
+### Feedback Controller Examples
+
+Coming soon - examples demonstrating full state feedback control for multi-dimensional systems.
 
 ## License
 
