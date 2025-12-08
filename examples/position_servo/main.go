@@ -149,11 +149,8 @@ func main() {
 			actualPos := servo.GetActualPosition()
 			velocity := servo.GetVelocity()
 
-			// Calculate error
-			error := target - measuredPos
-
-			// Update PID controller
-			command := controller.Update(error)
+			// Calculate PID output
+			command := controller.Calculate(target, measuredPos)
 
 			// Apply command to servo
 			servo.ApplyCommand(command)
@@ -161,6 +158,7 @@ func main() {
 			// Print status every 0.1 seconds
 			elapsed := time.Since(startTime).Seconds()
 			if math.Mod(elapsed, 0.1) < float64(interval.Seconds()) {
+				error := target - measuredPos
 				fmt.Printf("%.2f\t%.1f\t%.2f\t\t%.2f\t\t%.1f\t\t%.2f\t%.3f\n",
 					totalTime+elapsed, target, measuredPos, actualPos, velocity, error, command)
 			}

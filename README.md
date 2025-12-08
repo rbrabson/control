@@ -54,12 +54,12 @@ func main() {
     measurement := 0.0
     
     for i := 0; i < 100; i++ {
-        error := setpoint - measurement
-        output := controller.Update(error)
+        output := controller.Calculate(setpoint, measurement)
         
         // Apply output to your system
         // measurement = yourSystem.ApplyControl(output)
         
+        error := setpoint - measurement
         fmt.Printf("Error: %.2f, Output: %.2f\n", error, output)
         time.Sleep(10 * time.Millisecond)
     }
@@ -116,9 +116,9 @@ Creates a new PID controller with the specified gains and optional configuration
 
 ### Core Methods
 
-#### `Update(error float64) float64`
+#### `Calculate(reference, state float64) float64`
 
-Computes the PID output for the given error (setpoint - measurement).
+Computes the PID output for the given reference (setpoint) and current state (measurement). The error is calculated internally as reference - state.
 
 #### `Reset()`
 

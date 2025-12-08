@@ -107,9 +107,10 @@ func WithOutputLimits(min, max float64) Option {
 	}
 }
 
-// Update computes the PID output given the current error (setpoint - measurement)
-func (p *PID) Update(error float64) float64 {
+// Calculate computes the PID output for the given reference (setpoint) and current state (measurement)
+func (p *PID) Calculate(reference, state float64) float64 {
 	now := time.Now()
+	error := p.calculateError(reference, state)
 
 	// Initialize on first call
 	if !p.initialized {
@@ -147,6 +148,11 @@ func (p *PID) Update(error float64) float64 {
 	p.prevTime = now
 
 	return clampedOutput
+}
+
+// calculateError computes the error between the reference and current state
+func (p *PID) calculateError(reference, state float64) float64 {
+	return reference - state
 }
 
 // calculateProportional computes the proportional term for a given error

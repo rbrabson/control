@@ -20,14 +20,14 @@ import (
 
 // ThermalSystem represents a simulated heating system
 type ThermalSystem struct {
-	temperature    float64   // Current temperature (°C)
-	ambientTemp    float64   // Ambient temperature (°C)
-	heatCapacity   float64   // Thermal mass
-	heatLoss       float64   // Heat loss coefficient
-	heaterPower    float64   // Current heater power (0-1)
-	maxHeaterPower float64   // Maximum heater power (watts)
+	temperature    float64 // Current temperature (°C)
+	ambientTemp    float64 // Ambient temperature (°C)
+	heatCapacity   float64 // Thermal mass
+	heatLoss       float64 // Heat loss coefficient
+	heaterPower    float64 // Current heater power (0-1)
+	maxHeaterPower float64 // Maximum heater power (watts)
 	lastUpdate     time.Time
-	sensorNoise    float64   // Temperature sensor noise (°C)
+	sensorNoise    float64 // Temperature sensor noise (°C)
 }
 
 // NewThermalSystem creates a new simulated thermal system
@@ -99,7 +99,7 @@ func main() {
 	fmt.Println()
 
 	// Ambient temperature compensation (feed-forward)
-	ambientTemp := 20.0 // °C
+	ambientTemp := 20.0     // °C
 	feedForwardGain := 0.02 // Rough estimate of power needed per degree above ambient
 
 	// Create temperature controller with advanced features
@@ -142,49 +142,47 @@ func main() {
 
 	for _, scenario := range scenarios {
 		fmt.Printf("\n%s\n", scenario.description)
-		
+
 		// Update ambient temperature if changed
 		thermalSystem.SetAmbientTemperature(scenario.ambientTemp)
-		
+
 		// Update feed-forward for new ambient temperature
 		controller.SetFeedForward(scenario.ambientTemp * feedForwardGain)
-		
+
 		startTime := time.Now()
-		
+
 		for time.Since(startTime).Seconds() < scenario.duration {
 			// Get current temperature with noise
 			measuredTemp := thermalSystem.GetTemperature()
 			actualTemp := thermalSystem.GetActualTemperature()
-			
-			// Calculate error
-			error := scenario.setpoint - measuredTemp
-			
-			// Update PID controller
-			heaterPower := controller.Update(error)
-			
+
+			// Calculate PID output
+			heaterPower := controller.Calculate(scenario.setpoint, measuredTemp)
+
 			// Apply power to thermal system
 			thermalSystem.ApplyHeaterPower(heaterPower)
-			
+
 			// Print status every 0.5 seconds
 			elapsed := time.Since(startTime).Seconds()
 			if math.Mod(elapsed, 0.5) < float64(interval.Seconds()) {
-				fmt.Printf("%.1f\t%.1f\t\t%.2f\t\t%.2f\t\t%.2f\t%.1f%%\n", 
+				error := scenario.setpoint - measuredTemp
+				fmt.Printf("%.1f\t%.1f\t\t%.2f\t\t%.2f\t\t%.2f\t%.1f%%\n",
 					totalTime+elapsed, scenario.setpoint, measuredTemp, actualTemp, error, heaterPower*100)
 			}
-			
+
 			time.Sleep(interval)
 		}
-		
+
 		totalTime += scenario.duration
 	}
 
 	fmt.Println()
 	fmt.Println("Temperature Control Completed")
-	
+
 	// Display final system state
 	fmt.Printf("Final temperature: %.2f°C\n", thermalSystem.GetActualTemperature())
 	fmt.Printf("Final ambient: %.1f°C\n", thermalSystem.ambientTemp)
-	
+
 	// Display controller configuration
 	kp, ki, kd := controller.GetGains()
 	fmt.Printf("Controller gains - Kp: %.1f, Ki: %.1f, Kd: %.3f\n", kp, ki, kd)

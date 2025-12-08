@@ -192,9 +192,9 @@ func TestSetOutputLimits(t *testing.T) {
 	}
 
 	// Test clamping with large error
-	pid.Update(1000.0) // Large error
+	pid.Calculate(1000.0, 0.0) // Large error
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(1000.0)
+	output := pid.Calculate(1000.0, 0.0)
 
 	if output > 10.0 || output < -10.0 {
 		t.Errorf("Output %f should be clamped between -10 and 10", output)
@@ -214,22 +214,22 @@ func TestSetGains(t *testing.T) {
 	}
 }
 
-func TestBasicPIDUpdate(t *testing.T) {
+func TestBasicPIDCalculate(t *testing.T) {
 	pid := New(1.0, 0.1, 0.05)
 
-	// First update should return 0 (initialization)
-	output := pid.Update(1.0)
+	// First calculate should return 0 (initialization)
+	output := pid.Calculate(1.0, 0.0)
 	if output != 0 {
-		t.Errorf("First update should return 0, got %f", output)
+		t.Errorf("First calculate should return 0, got %f", output)
 	}
 
-	// Wait a bit and update again
+	// Wait a bit and calculate again
 	time.Sleep(10 * time.Millisecond)
-	output = pid.Update(1.0)
+	output = pid.Calculate(1.0, 0.0)
 
 	// Should have proportional component at least
 	if output == 0 {
-		t.Error("Second update should not be zero with non-zero error")
+		t.Error("Second calculate should not be zero with non-zero error")
 	}
 }
 
@@ -237,9 +237,9 @@ func TestProportionalTerm(t *testing.T) {
 	// Pure proportional controller
 	pid := New(2.0, 0.0, 0.0)
 
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(1.0)
+	output := pid.Calculate(1.0, 0.0)
 
 	// Output should equal Kp * error = 2.0 * 1.0 = 2.0
 	if !almostEqual(output, 2.0, 0.001) {
@@ -251,9 +251,9 @@ func TestIntegralTerm(t *testing.T) {
 	// Pure integral controller
 	pid := New(0.0, 1.0, 0.0)
 
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(100 * time.Millisecond)
-	output := pid.Update(1.0)
+	output := pid.Calculate(1.0, 0.0)
 
 	// Integral should accumulate error over time
 	if output <= 0 {
@@ -271,9 +271,9 @@ func TestDerivativeTerm(t *testing.T) {
 	// Pure derivative controller
 	pid := New(0.0, 0.0, 1.0)
 
-	pid.Update(0.0) // Initialize with zero error
+	pid.Calculate(0.0, 0.0) // Initialize with zero error
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(1.0) // Step change in error
+	output := pid.Calculate(1.0, 0.0) // Step change in error
 
 	// Derivative should respond to change in error
 	if output <= 0 {
@@ -285,9 +285,9 @@ func TestFeedForward(t *testing.T) {
 	feedForward := 5.0
 	pid := New(0.0, 0.0, 0.0, WithFeedForward(feedForward))
 
-	pid.Update(0.0) // Initialize
+	pid.Calculate(0.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(0.0) // Zero error
+	output := pid.Calculate(0.0, 0.0) // Zero error
 
 	// Output should equal feed-forward value
 	if !almostEqual(output, feedForward, 0.001) {
@@ -299,11 +299,11 @@ func TestIntegralResetOnZeroCross(t *testing.T) {
 	pid := New(0.0, 1.0, 0.0, WithIntegralResetOnZeroCross())
 
 	// Build up positive integral
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(1.0)
+	pid.Calculate(1.0, 0.0)
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(1.0)
+	pid.Calculate(1.0, 0.0)
 
 	integral1 := pid.GetIntegral()
 	if integral1 <= 0 {
@@ -312,7 +312,7 @@ func TestIntegralResetOnZeroCross(t *testing.T) {
 
 	// Cross zero - the integral gets reset but then immediately accumulates the new error
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(-1.0)
+	pid.Calculate(-1.0, 0.0)
 
 	integral2 := pid.GetIntegral()
 	// The integral should be much smaller (close to zero) since it was reset at zero crossing
@@ -323,17 +323,17 @@ func TestIntegralResetOnZeroCross(t *testing.T) {
 
 	// Test the reset more directly by checking right at the zero crossing
 	pid.Reset()
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(1.0) // Positive error
+	pid.Calculate(1.0, 0.0) // Positive error
 
 	integralBeforeReset := pid.GetIntegral()
 
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(0.0) // Zero error - should not trigger reset
+	pid.Calculate(0.0, 0.0) // Zero error - should not trigger reset
 
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(-0.1) // Small negative error - should trigger reset
+	pid.Calculate(-0.1, 0.0) // Small negative error - should trigger reset
 
 	integralAfterReset := pid.GetIntegral()
 
@@ -347,17 +347,17 @@ func TestStabilityThreshold(t *testing.T) {
 	threshold := 1.0
 	pid := New(0.0, 1.0, 0.0, WithStabilityThreshold(threshold))
 
-	pid.Update(0.0) // Initialize
+	pid.Calculate(0.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
 
 	// Small error change (below threshold)
-	pid.Update(0.1)
+	pid.Calculate(0.1, 0.0)
 	integral1 := pid.GetIntegral()
 
 	time.Sleep(10 * time.Millisecond)
 
 	// Large error change (above threshold)
-	pid.Update(2.0) // This creates derivative > threshold
+	pid.Calculate(2.0, 0.0) // This creates derivative > threshold
 	integral2 := pid.GetIntegral()
 
 	// Integral should not have accumulated much during high derivative
@@ -370,12 +370,12 @@ func TestIntegralSumMax(t *testing.T) {
 	maxSum := 1.0
 	pid := New(0.0, 1.0, 0.0, WithIntegralSumMax(maxSum))
 
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 
 	// Keep adding large errors to try to exceed max
 	for i := 0; i < 100; i++ {
 		time.Sleep(10 * time.Millisecond)
-		pid.Update(10.0) // Large error
+		pid.Calculate(10.0, 0.0) // Large error
 	}
 
 	integral := pid.GetIntegral()
@@ -388,12 +388,12 @@ func TestDerivativeFilter(t *testing.T) {
 	alpha := 0.5
 	pid := New(0.0, 0.0, 1.0, WithDerivativeFilter(alpha))
 
-	pid.Update(0.0) // Initialize
+	pid.Calculate(0.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	output1 := pid.Update(1.0) // Step change
+	output1 := pid.Calculate(1.0, 0.0) // Step change
 
 	time.Sleep(10 * time.Millisecond)
-	output2 := pid.Update(1.0) // Same error (derivative should be 0)
+	output2 := pid.Calculate(1.0, 0.0) // Same error (derivative should be 0)
 
 	// With filtering, derivative response should be smoother
 	if math.Abs(output2) >= math.Abs(output1) {
@@ -405,9 +405,9 @@ func TestReset(t *testing.T) {
 	pid := New(1.0, 1.0, 1.0)
 
 	// Build up some state
-	pid.Update(1.0)
+	pid.Calculate(1.0, 0.0)
 	time.Sleep(10 * time.Millisecond)
-	pid.Update(1.0)
+	pid.Calculate(1.0, 0.0)
 
 	if pid.GetIntegral() == 0 {
 		t.Error("Integral should not be zero before reset")
@@ -429,9 +429,9 @@ func TestOutputClamping(t *testing.T) {
 	pid := New(10.0, 0.0, 0.0) // Large proportional gain
 	pid.SetOutputLimits(-1.0, 1.0)
 
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(1.0) // Should produce output > 1.0 without clamping
+	output := pid.Calculate(1.0, 0.0) // Should produce output > 1.0 without clamping
 
 	if output > 1.0 || output < -1.0 {
 		t.Errorf("Output %f should be clamped between -1.0 and 1.0", output)
@@ -443,10 +443,10 @@ func TestAntiWindup(t *testing.T) {
 	pid.SetOutputLimits(-1.0, 1.0)
 
 	// Build up integral until output saturates
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 	for i := 0; i < 20; i++ {
 		time.Sleep(10 * time.Millisecond)
-		pid.Update(1.0) // Constant error
+		pid.Calculate(1.0, 0.0) // Constant error
 	}
 
 	// Integral should be limited due to anti-windup
@@ -528,10 +528,10 @@ func TestSetterMethods(t *testing.T) {
 func TestZeroTimeDelta(t *testing.T) {
 	pid := New(1.0, 0.1, 0.05)
 
-	pid.Update(1.0) // Initialize
+	pid.Calculate(1.0, 0.0) // Initialize
 
 	// Update immediately without time passing
-	output := pid.Update(1.0)
+	output := pid.Calculate(1.0, 0.0)
 
 	// Should handle zero time delta gracefully
 	if !almostEqual(output, 1.0, 0.1) { // Should return proportional term
@@ -542,9 +542,9 @@ func TestZeroTimeDelta(t *testing.T) {
 func TestNegativeError(t *testing.T) {
 	pid := New(1.0, 0.1, 0.05)
 
-	pid.Update(-1.0) // Initialize with negative error
+	pid.Calculate(-1.0, 0.0) // Initialize with negative error
 	time.Sleep(10 * time.Millisecond)
-	output := pid.Update(-1.0)
+	output := pid.Calculate(-1.0, 0.0)
 
 	// Output should be negative for negative error
 	if output >= 0 {
@@ -553,17 +553,17 @@ func TestNegativeError(t *testing.T) {
 }
 
 // Benchmark tests
-func BenchmarkPIDUpdate(b *testing.B) {
+func BenchmarkPIDCalculate(b *testing.B) {
 	pid := New(1.0, 0.1, 0.05)
-	pid.Update(0.0) // Initialize
+	pid.Calculate(0.0, 0.0) // Initialize
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		pid.Update(float64(i % 100))
+		pid.Calculate(float64(i%100), 0.0)
 	}
 }
 
-func BenchmarkPIDUpdateWithAllOptions(b *testing.B) {
+func BenchmarkPIDCalculateWithAllOptions(b *testing.B) {
 	pid := New(1.0, 0.1, 0.05,
 		WithFeedForward(2.0),
 		WithIntegralResetOnZeroCross(),
@@ -571,10 +571,10 @@ func BenchmarkPIDUpdateWithAllOptions(b *testing.B) {
 		WithIntegralSumMax(5.0),
 		WithDerivativeFilter(0.3),
 	)
-	pid.Update(0.0) // Initialize
+	pid.Calculate(0.0, 0.0) // Initialize
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		pid.Update(float64(i % 100))
+		pid.Calculate(float64(i%100), 0.0)
 	}
 }

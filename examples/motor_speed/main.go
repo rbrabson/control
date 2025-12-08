@@ -21,12 +21,12 @@ import (
 
 // Motor represents a simulated DC motor with realistic dynamics
 type Motor struct {
-	speed        float64   // Current speed (RPM)
-	acceleration float64   // Current acceleration
-	maxSpeed     float64   // Maximum motor speed
-	timeConstant float64   // Motor time constant
+	speed        float64 // Current speed (RPM)
+	acceleration float64 // Current acceleration
+	maxSpeed     float64 // Maximum motor speed
+	timeConstant float64 // Motor time constant
 	lastUpdate   time.Time
-	noise        float64   // Encoder noise level
+	noise        float64 // Encoder noise level
 }
 
 // NewMotor creates a new simulated motor
@@ -57,10 +57,10 @@ func (m *Motor) ApplyPower(power float64) {
 	if dt > 0 {
 		// Target speed based on power
 		targetSpeed := power * m.maxSpeed
-		
+
 		// First-order motor dynamics
 		m.speed += (targetSpeed - m.speed) * dt / m.timeConstant
-		
+
 		// Add some acceleration dynamics for realism
 		m.acceleration = (targetSpeed - m.speed) / m.timeConstant
 	}
@@ -85,9 +85,9 @@ func main() {
 
 	// Create motor controller with advanced features for FTC-style motor control
 	controller := pid.New(0.8, 0.1, 0.02,
-		pid.WithIntegralSumMax(1.0/0.1),        // Ensure Ki * integralMax ≤ 1.0 for motor limits
-		pid.WithStabilityThreshold(50),         // Disable integral during rapid speed changes
-		pid.WithDerivativeFilter(0.1),          // Filter encoder noise (10% filter)
+		pid.WithIntegralSumMax(1.0/0.1), // Ensure Ki * integralMax ≤ 1.0 for motor limits
+		pid.WithStabilityThreshold(50),  // Disable integral during rapid speed changes
+		pid.WithDerivativeFilter(0.1),   // Filter encoder noise (10% filter)
 	)
 
 	// Set motor power limits (-1.0 to 1.0)
@@ -98,7 +98,7 @@ func main() {
 
 	// Test multiple setpoints to demonstrate performance
 	setpoints := []float64{1000, 2000, 1500, 500, -1000, 0}
-	duration := 3.0 // 3 seconds per setpoint
+	duration := 3.0   // 3 seconds per setpoint
 	updateRate := 100 // 100Hz update rate (typical for motor control)
 	interval := time.Duration(1000/updateRate) * time.Millisecond
 
@@ -110,37 +110,35 @@ func main() {
 
 	for _, setpoint := range setpoints {
 		fmt.Printf("\nNew setpoint: %.0f RPM\n", setpoint)
-		
+
 		startTime := time.Now()
-		
+
 		for time.Since(startTime).Seconds() < duration {
 			// Get current speed with noise (realistic encoder reading)
 			measuredSpeed := motor.GetSpeed()
 			actualSpeed := motor.GetActualSpeed()
-			
-			// Calculate error
-			error := setpoint - measuredSpeed
-			
-			// Update PID controller
-			power := controller.Update(error)
-			
+
+			// Calculate PID output
+			power := controller.Calculate(setpoint, measuredSpeed)
+
 			// Apply power to motor
 			motor.ApplyPower(power)
-			
+
 			// Print status every 0.1 seconds
 			elapsed := time.Since(startTime).Seconds()
 			if math.Mod(elapsed, 0.1) < float64(interval.Seconds()) {
-				fmt.Printf("%.2f\t%.0f\t\t%.1f\t\t%.1f\t\t%.1f\t%.3f\n", 
+				error := setpoint - measuredSpeed
+				fmt.Printf("%.2f\t%.0f\t\t%.1f\t\t%.1f\t\t%.1f\t%.3f\n",
 					elapsed, setpoint, measuredSpeed, actualSpeed, error, power)
 			}
-			
+
 			time.Sleep(interval)
 		}
 	}
 
 	fmt.Println()
 	fmt.Println("Motor Control Completed")
-	
+
 	// Display final controller state
 	kp, ki, kd := controller.GetGains()
 	fmt.Printf("Final controller gains - Kp: %.1f, Ki: %.1f, Kd: %.3f\n", kp, ki, kd)
@@ -153,7 +151,7 @@ func main() {
 	fmt.Println("\nDemonstrating runtime gain tuning...")
 	controller.SetGains(1.2, 0.15, 0.03)
 	fmt.Println("Updated gains for more aggressive response")
-	
+
 	kp, ki, kd = controller.GetGains()
 	fmt.Printf("New gains - Kp: %.1f, Ki: %.2f, Kd: %.3f\n", kp, ki, kd)
 }

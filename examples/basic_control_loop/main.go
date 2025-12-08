@@ -87,11 +87,8 @@ func main() {
 		// Get current position from system
 		position := system.GetPosition()
 
-		// Calculate error
-		error := setpoint - position
-
-		// Update PID controller
-		output := controller.Update(error)
+		// Calculate PID output
+		output := controller.Calculate(setpoint, position)
 
 		// Apply control to system
 		system.ApplyControl(output)
@@ -99,6 +96,7 @@ func main() {
 		// Print status every 0.2 seconds for readability
 		elapsed := time.Since(startTime).Seconds()
 		if math.Mod(elapsed, 0.2) < float64(interval.Seconds()) {
+			error := setpoint - position
 			fmt.Printf("%.2f\t%.2f\t\t%.3f\t\t%.3f\t%.3f\n",
 				elapsed, setpoint, position, error, output)
 		}
