@@ -216,6 +216,17 @@ func (p *PID) calculateRawDerivative(error, dt float64) float64 {
 	return rawDerivative
 }
 
+// clamp restricts the value to the output limits
+func (p *PID) clamp(value float64) float64 {
+	if value > p.outputMax {
+		return p.outputMax
+	}
+	if value < p.outputMin {
+		return p.outputMin
+	}
+	return value
+}
+
 // Reset clears the internal state of the PID controller
 func (p *PID) Reset() {
 	p.integral = 0
@@ -287,15 +298,4 @@ func (p *PID) SetDerivativeFilter(alpha float64) {
 // GetDerivativeFilter returns the current derivative filter alpha value
 func (p *PID) GetDerivativeFilter() float64 {
 	return p.derivativeFilterAlpha
-}
-
-// clamp restricts the value to the output limits
-func (p *PID) clamp(value float64) float64 {
-	if value > p.outputMax {
-		return p.outputMax
-	}
-	if value < p.outputMin {
-		return p.outputMin
-	}
-	return value
 }
