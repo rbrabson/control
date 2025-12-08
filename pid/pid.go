@@ -108,11 +108,7 @@ func (p *PID) SetOutputLimits(min, max float64) {
 	p.outputMax = max
 
 	// Clamp integral to prevent windup
-	if p.integral > max {
-		p.integral = max
-	} else if p.integral < min {
-		p.integral = min
-	}
+	p.integral = p.clamp(p.integral)
 }
 
 // SetGains updates the PID gains
@@ -137,48 +133,14 @@ func (p *PID) Update(error float64) float64 {
 	// Calculate time delta
 	dt := now.Sub(p.prevTime).Seconds()
 	if dt <= 0 {
-		return p.clamp(p.kp * error)
+		proportional := p.calculateProportional(error)
+		return p.clamp(proportional)
 	}
 
-	// Proportional term
-	proportional := p.kp * error
-
-	// Check for zero crossover and reset integral if enabled
-	if p.integralResetOnZeroCross && ((p.prevError > 0 && error < 0) || (p.prevError < 0 && error > 0)) {
-		p.integral = 0
-	}
-
-	// Calculate raw derivative
-	rawDerivative := (error - p.prevError) / dt
-
-	// Apply low-pass filter to derivative if enabled
-	var derivative float64
-	if p.derivativeFilterAlpha > 0 {
-		p.filteredDerivative = p.derivativeFilterAlpha*p.filteredDerivative + (1-p.derivativeFilterAlpha)*rawDerivative
-		derivative = p.kd * p.filteredDerivative
-	} else {
-		derivative = p.kd * rawDerivative
-	}
-
-	// Integral term with stability threshold check
-	var integral float64
-	if p.stabilityThreshold == 0 || math.Abs(rawDerivative) <= p.stabilityThreshold {
-		p.integral += error * dt
-
-		// Cap integral sum if enabled
-		if p.integralSumMax > 0 {
-			if p.integral > p.integralSumMax {
-				p.integral = p.integralSumMax
-			} else if p.integral < -p.integralSumMax {
-				p.integral = -p.integralSumMax
-			}
-		}
-
-		integral = p.ki * p.integral
-	} else {
-		// Don't accumulate integral when above stability threshold
-		integral = p.ki * p.integral
-	}
+	// Calculate PID terms
+	proportional := p.calculateProportional(error)
+	derivative := p.calcualteDerrivative(error, dt)
+	integral := p.calcualteIntegral(error, dt)
 
 	// Calculate output
 	output := proportional + integral + derivative + p.feedForward
@@ -196,6 +158,62 @@ func (p *PID) Update(error float64) float64 {
 	p.prevTime = now
 
 	return clampedOutput
+}
+
+// calculateProportional computes the proportional term for a given error
+func (p *PID) calculateProportional(error float64) float64 {
+	proportional := p.kp * error
+	return proportional
+}
+
+// calcualteDerrivative computes the derivative term for a given error and time delta
+func (p *PID) calcualteDerrivative(error, dt float64) float64 {
+	rawDerivative := p.calculateRawDerivative(error, dt)
+
+	// Apply low-pass filter to derivative if enabled
+	var derivative float64
+	if p.derivativeFilterAlpha > 0 {
+		p.filteredDerivative = p.derivativeFilterAlpha*p.filteredDerivative + (1-p.derivativeFilterAlpha)*rawDerivative
+		derivative = p.kd * p.filteredDerivative
+	} else {
+		derivative = p.kd * rawDerivative
+	}
+	return derivative
+}
+
+// calcualteIntegral computes the integral term for a given error and time delta
+func (p *PID) calcualteIntegral(error, dt float64) float64 {
+	// Check for zero crossover and reset integral if enabled
+	if p.integralResetOnZeroCross && ((p.prevError > 0 && error < 0) || (p.prevError < 0 && error > 0)) {
+		p.integral = 0
+	}
+
+	// Integral term with stability threshold check
+	rawDerivative := p.calculateRawDerivative(error, dt)
+	var integral float64
+	if p.stabilityThreshold == 0 || math.Abs(rawDerivative) <= p.stabilityThreshold {
+		p.integral += error * dt
+
+		// Cap integral sum if enabled
+		if p.integralSumMax > 0 {
+			if p.integral > p.integralSumMax {
+				p.integral = p.integralSumMax
+			} else if p.integral < -p.integralSumMax {
+				p.integral = -p.integralSumMax
+			}
+		}
+
+		integral = p.ki * p.integral
+	} else {
+		integral = p.ki * p.integral // Don't accumulate integral when above stability threshold
+	}
+	return integral
+}
+
+// calculateRawDerivative computes the raw derivative term for a given error and time delta
+func (p *PID) calculateRawDerivative(error, dt float64) float64 {
+	rawDerivative := (error - p.prevError) / dt
+	return rawDerivative
 }
 
 // Reset clears the internal state of the PID controller
