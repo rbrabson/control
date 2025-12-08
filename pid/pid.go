@@ -223,17 +223,17 @@ func (p *PID) SetGains(kp, ki, kd float64) {
 	p.kd = kd
 }
 
+// GetGains returns the current PID gains
+func (p *PID) GetGains() (kp, ki, kd float64) {
+	return p.kp, p.ki, p.kd
+}
+
 // Reset clears the internal state of the PID controller
 func (p *PID) Reset() {
 	p.integral = 0
 	p.prevError = 0
 	p.filteredDerivative = 0
 	p.initialized = false
-}
-
-// GetGains returns the current PID gains
-func (p *PID) GetGains() (kp, ki, kd float64) {
-	return p.kp, p.ki, p.kd
 }
 
 // GetIntegral returns the current integral value
