@@ -6,7 +6,7 @@ This directory contains complete working examples demonstrating various uses of 
 
 Each example is in its own subdirectory and can be run independently:
 
-### PID Control Examples
+### Running PID Control Examples
 
 ```bash
 # Basic control loop example
@@ -26,7 +26,7 @@ cd position_servo
 go run main.go
 ```
 
-### Feedback Control Examples
+### Running Feedback Control Examples
 
 ```bash
 # Basic feedback control example
