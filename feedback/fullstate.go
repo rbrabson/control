@@ -9,8 +9,8 @@ type FullStateFeedback struct {
 	gain Values
 }
 
-// NewFullStateFeedback creates a new FullStateFeedback controller with the specified gain values.
-func NewFullStateFeedback(gain Values) *FullStateFeedback {
+// New creates a new FullStateFeedback controller with the specified gain values.
+func New(gain Values) *FullStateFeedback {
 	return &FullStateFeedback{
 		gain: gain,
 	}

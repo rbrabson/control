@@ -1,6 +1,6 @@
 # Control Systems Library
 
-A comprehensive control systems library in Go featuring PID controllers and feedback control implementations for robotics and industrial automation.
+A comprehensive control systems library in Go featuring PID controllers, feedback control, and feedforward control implementations for robotics and industrial automation.
 
 ## Features
 
@@ -18,11 +18,16 @@ A comprehensive control systems library in Go featuring PID controllers and feed
 - **Stability threshold** to disable integral calculation during high-speed changes
 - **Integral sum capping** for additional windup protection
 - **Derivative low-pass filtering** to reduce measurement noise
+- **Gravity compensation** for vertical motion systems
+- **Cosine compensation** for angular/rotating systems
+- **Combined compensation** strategies for complex machinery
 
 ### Performance & Reliability
 
-- **~64ns per update** - Excellent performance for real-time applications
-- **92.1% test coverage** with comprehensive test suite
+- **PID Controllers**: ~64ns per update - Excellent performance for real-time applications
+- **Feedforward Controllers**: ~2-5ns per calculation - Ultra-fast predictive control
+- **Feedback Controllers**: Scales with system dimension, optimized for multi-variable systems
+- **Comprehensive test coverage** with extensive test suites
 - **Thread-safe design** for concurrent applications
 - **Robust error handling** for edge cases and invalid inputs
 
@@ -34,7 +39,7 @@ go get github.com/rbrabson/control
 
 ## Packages
 
-This library provides two main packages:
+This library provides three main packages:
 
 ### PID Package (`control/pid`)
 
@@ -48,6 +53,22 @@ High-performance PID controller implementation with advanced features:
 ### Feedback Package (`control/feedback`)
 
 Flexible feedback control interfaces and implementations:
+
+- Full-state feedback control for multi-dimensional systems
+- Vector-based control calculations
+- Error handling for dimension mismatches
+- High-performance implementations
+
+### Feedforward Package (`control/feedforward`)
+
+Predictive feedforward controllers with advanced compensation:
+
+- Basic velocity and acceleration feedforward
+- Gravity compensation for vertical systems
+- Cosine compensation for rotating machinery
+- Combined compensation strategies
+- Options pattern for flexible configuration
+- Ultra-fast calculations (2-5 ns/op)
 
 - **Feedback Interface**: Common interface for all feedback controllers
 - **FullStateFeedback**: Multi-dimensional state feedback controller
@@ -148,6 +169,25 @@ controller.SetOutputLimits(-50, 50)
 
 // Modify advanced features
 controller.SetFeedForward(3.0)
+```
+
+### Feedforward Controller Options
+
+```go
+// Basic feedforward
+basicFF := feedforward.New()
+
+// Elevator with gravity compensation  
+elevatorFF := feedforward.New(feedforward.WithGravityGain(9.81))
+
+// Robotic arm with cosine compensation
+armFF := feedforward.New(feedforward.WithCosineGain(2.5))
+
+// Crane with combined compensation
+craneFF := feedforward.New(
+    feedforward.WithGravityGain(15.7),
+    feedforward.WithCosineGain(8.2),
+)
 controller.SetStabilityThreshold(1.5)
 controller.SetIntegralSumMax(8.0)
 controller.SetDerivativeFilter(0.2)
@@ -369,12 +409,76 @@ positionController := pid.New(1.5, 0.2, 0.05,
 )
 ```
 
+## Feedforward Control
+
+The feedforward package provides predictive control for improved system performance:
+
+### Controller Types
+
+#### Basic Feedforward
+
+```go
+ff := feedforward.New()
+// Output: kV*velocity + kA*acceleration
+```
+
+#### Gravity Compensation
+
+```go
+ff := feedforward.New(feedforward.WithGravityGain(9.81))
+// Output: kV*velocity + kA*acceleration + kG
+```
+
+#### Cosine Compensation
+
+```go
+ff := feedforward.New(feedforward.WithCosineGain(2.5))
+// Output: kV*velocity + kA*acceleration + kCos*cos(position)
+```
+
+#### Combined Compensation
+
+```go
+ff := feedforward.New(
+    feedforward.WithGravityGain(15.7),
+    feedforward.WithCosineGain(8.2),
+)
+// Output: kV*velocity + kA*acceleration + kG + kCos*cos(position)
+```
+
+### Applications
+
+- **Basic FF**: Simple systems without gravitational effects
+- **Gravity FF**: Elevators, vertical lifts, load handling
+- **Cosine FF**: Robotic arms, rotating machinery, pendulums  
+- **Combined FF**: Cranes, construction equipment, complex robotics
+
+### Integration with Feedback Control
+
+```go
+// Typical control system structure
+totalOutput := pidOutput + feedforwardOutput + feedbackOutput
+```
+
+The feedforward provides the bulk of the control effort, while feedback handles disturbances and model uncertainties.
+
 ## Performance
 
-- **Update Rate**: ~64ns per update (15+ million updates/second)
-- **Memory Usage**: Minimal allocation after initialization
+- **PID Controllers**: ~64ns per update (15+ million updates/second)
+- **Feedforward Controllers**: ~2-5ns per calculation (200+ million calculations/second)
+- **Feedback Controllers**: Scales with system dimension
+- **Memory Usage**: Minimal allocation after initialization, zero allocations during calculations
 - **Precision**: Full float64 precision for all calculations
 - **Timing**: Microsecond-accurate time-based integral/derivative calculation
+
+### Feedforward Benchmarks
+
+```text
+BenchmarkCalculateBasic-10         577752901    2.120 ns/op    0 B/op    0 allocs/op
+BenchmarkCalculateWithGravity-10   579784483    2.066 ns/op    0 B/op    0 allocs/op
+BenchmarkCalculateWithCosine-10    230321818    5.203 ns/op    0 B/op    0 allocs/op
+BenchmarkCalculateWithBoth-10      229596540    5.189 ns/op    0 B/op    0 allocs/op
+```
 
 ## Best Practices
 
@@ -433,7 +537,23 @@ See the `examples/` directory for complete working examples:
 
 ### Feedback Controller Examples
 
-Coming soon - examples demonstrating full state feedback control for multi-dimensional systems.
+- Full state feedback control for multi-dimensional systems
+- Vector-based control calculations
+
+### Feedforward Controller Examples
+
+- **Basic Control** (`feedforward/examples/basic/`) - Simple motor control with velocity/acceleration compensation
+- **Elevator Control** (`feedforward/examples/elevator/`) - Gravity compensation for vertical movement
+- **Robotic Arm** (`feedforward/examples/arm/`) - Cosine compensation for rotating joints
+- **Crane Control** (`feedforward/examples/crane/`) - Combined gravity and cosine compensation
+- **Controller Comparison** (`feedforward/examples/compare/`) - Side-by-side performance analysis
+
+#### Feedforward Performance
+
+- **Ultra-fast calculations**: 2-5 nanoseconds per operation
+- **Zero memory allocations** during calculations
+- **100% test coverage** with comprehensive benchmarks
+- **Real-world applications**: Elevators, robotic arms, cranes, industrial automation
 
 ## License
 

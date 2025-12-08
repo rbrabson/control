@@ -24,7 +24,7 @@ func main() {
 	// Create state feedback controller for stabilization
 	// Gains for [position_error, velocity]
 	stabilizationGains := feedback.Values{0.8, 0.3}
-	stateController := feedback.NewFullStateFeedback(stabilizationGains)
+	stateController := feedback.New(stabilizationGains)
 
 	// Simulation parameters
 	targetPosition := 45.0 // Target angle in degrees
@@ -100,8 +100,8 @@ func main() {
 
 	// Create different feedback controllers
 	noFeedback := &feedback.NoFeedback{}
-	aggressiveFeedback := feedback.NewFullStateFeedback(feedback.Values{2.0, 0.8})
-	gentleFeedback := feedback.NewFullStateFeedback(feedback.Values{1.0, 0.2})
+	aggressiveFeedback := feedback.New(feedback.Values{2.0, 0.8})
+	gentleFeedback := feedback.New(feedback.Values{1.0, 0.2})
 
 	// Simulate different operating conditions
 	scenarios := []struct {

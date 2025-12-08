@@ -33,7 +33,7 @@ func TestNewFullStateFeedback(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := NewFullStateFeedback(tt.gain)
+			controller := New(tt.gain)
 
 			if controller == nil {
 				t.Error("NewFullStateFeedback returned nil")
@@ -138,7 +138,7 @@ func TestFullStateFeedbackCalculate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := NewFullStateFeedback(tt.gain)
+			controller := New(tt.gain)
 			output, err := controller.Calculate(tt.setpoint, tt.measurement)
 
 			if tt.shouldError {
@@ -161,7 +161,7 @@ func TestFullStateFeedbackCalculate(t *testing.T) {
 }
 
 func TestFullStateFeedbackCalculateErrorConditions(t *testing.T) {
-	controller := NewFullStateFeedback(Values{1.0, 0.5})
+	controller := New(Values{1.0, 0.5})
 
 	// Test various error conditions
 	testCases := []struct {
@@ -216,7 +216,7 @@ func almostEqual(a, b, tolerance float64) bool {
 
 func BenchmarkFullStateFeedbackCalculate(b *testing.B) {
 	gain := Values{1.5, 0.3, 2.1, 0.8}
-	controller := NewFullStateFeedback(gain)
+	controller := New(gain)
 	setpoint := Values{10.0, 5.0, 2.0, 8.0}
 	measurement := Values{8.5, 6.0, 1.5, 7.2}
 
@@ -239,7 +239,7 @@ func BenchmarkFullStateFeedbackCalculateLarge(b *testing.B) {
 		measurement[i] = float64(i) * 0.9
 	}
 
-	controller := NewFullStateFeedback(gain)
+	controller := New(gain)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

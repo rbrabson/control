@@ -1,228 +1,161 @@
 # Control Systems Examples
 
-This directory contains complete working examples demonstrating various uses of both the PID controller and feedback control libraries.
+This directory contains examples demonstrating the control systems library. The examples are organized across different control packages, each showcasing specific control techniques and applications.
+
+## Overview of Available Examples
+
+The control systems library includes examples in several locations:
+
+### PID Control Examples (`../pid/examples/`)
+
+Advanced PID controller implementations with various features:
+
+- **`basic_control_loop/`** - Fundamental PID usage with a simple first-order system
+- **`motor_speed/`** - Motor speed control with realistic dynamics and disturbances  
+- **`position_servo/`** - Position control system with error tracking
+- **`temperature_control/`** - Temperature regulation with thermal dynamics
+
+### Feedback Control Examples (`../feedback/examples/`)
+
+State-space and vector-based feedback control systems:
+
+- **`feedback_control/`** - Full-state feedback controller implementation
+
+### Feedforward Control Examples (`../feedforward/examples/`)
+
+Predictive control for improved performance:
+
+- **`basic/`** - Simple motor control with velocity/acceleration compensation
+- **`elevator/`** - Elevator system with gravity compensation
+- **`arm/`** - Robotic arm with angle-dependent cosine compensation
+- **`crane/`** - Complex crane control with combined compensations
+- **`compare/`** - Side-by-side comparison of all feedforward controller types
+
+### Combined Control Examples (This Directory)
+
+Advanced examples combining multiple control techniques:
+
+- **`combined_control/`** - Integration of PID and feedback control methods
 
 ## Running the Examples
 
-Each example is in its own subdirectory and can be run independently:
-
-### Running PID Control Examples
+Each example can be run independently from its directory:
 
 ```bash
-# Basic control loop example
-cd basic_control_loop
-go run basic_control_loop.go
-
-# Motor speed control example  
-cd motor_speed
-go run main.go
-
-# Temperature control example
-cd temperature_control
-go run main.go
-
-# Position servo control example
-cd position_servo  
-go run main.go
+# Navigate to any example directory and run
+cd basic_control_loop  # or any other example directory
+go run main.go         # or the appropriate main file
 ```
 
-### Running Feedback Control Examples
+### Quick Navigation
 
 ```bash
-# Basic feedback control example
-cd feedback_control
-go run main.go
+# PID Examples
+cd ../pid/examples/basic_control_loop && go run main.go
 
-# Combined PID + feedback control example
-cd combined_control
-go run main.go
+# Feedback Examples  
+cd ../feedback/examples/feedback_control && go run main.go
+
+# Feedforward Examples
+cd ../feedforward/examples/basic && go run .
+
+# Combined Examples
+cd combined_control && go run main.go
 ```
 
-## Example Descriptions
+## Example Categories
 
-### PID Control Examples
+### **Learning Path: Beginner**
 
-#### Basic Control Loop (`basic_control_loop/`)
+Start with these examples to understand basic concepts:
 
-Demonstrates fundamental PID usage with a simple simulated first-order system:
+1. `../pid/examples/basic_control_loop/` - Learn PID fundamentals
+2. `../feedforward/examples/basic/` - Understand feedforward control
+3. `../feedback/examples/feedback_control/` - Explore state feedback
 
-- Basic PID controller creation and configuration
-- Output limiting with options pattern
-- Simple control loop with timing
-- System response monitoring
+### **Learning Path: Intermediate**
 
-#### Motor Speed Control (`motor_speed/`)
+Build on the basics with realistic applications:
 
-Shows advanced PID features for motor control applications:
+1. `../pid/examples/motor_speed/` - Practical PID tuning
+2. `../feedforward/examples/elevator/` - Gravity compensation
+3. `combined_control/` - Multiple control techniques
 
-- Integral sum limiting to prevent motor saturation
-- Stability threshold to reduce overshoot during rapid changes
-- Derivative filtering for encoder noise reduction
-- Realistic motor dynamics simulation with noise
-- Multiple setpoint changes demonstrating response characteristics
+### **Learning Path: Advanced**
 
-#### Temperature Control (`temperature_control/`)
+Complex systems and optimization:
 
-Demonstrates thermal system control with environmental factors:
+1. `../feedforward/examples/crane/` - Multi-compensation systems
+2. `../feedforward/examples/compare/` - Controller selection
+3. `../pid/examples/temperature_control/` - Non-linear dynamics
 
-- Feed-forward control for ambient temperature compensation
-- Integral reset on zero crossover to prevent overshoot
-- Derivative filtering for temperature sensor noise
-- Realistic thermal dynamics with heat capacity and loss
-- Ambient temperature disturbances
+## Key Control Concepts Demonstrated
 
-#### Position Servo Control (`position_servo/`)
+### **PID Control**
 
-Illustrates precise positioning applications:
+- Proportional, Integral, Derivative action
+- Output limiting and anti-windup
+- Parameter tuning techniques
+- Real-world disturbance handling
 
-- Integral windup protection for large position errors
-- Stability threshold during high-speed movement
-- Encoder quantization effects
-- Realistic servo dynamics with backlash and friction
-- Multiple target positions with accuracy analysis
+### **Feedforward Control**
 
-### Feedback Control Examples
+- Velocity and acceleration compensation
+- Gravity compensation for vertical systems
+- Cosine compensation for rotating systems
+- Combined compensation strategies
 
-#### Basic Feedback Control (`feedback_control/`)
+### **Feedback Control**
 
-Demonstrates the fundamental usage of feedback controllers:
+- Full-state feedback design
+- Vector-based control systems
+- Multi-input, multi-output systems
 
-- **NoFeedback Controller**: Always returns zero output, useful for open-loop control
-- **Single State Feedback**: Simple proportional control for position
-- **Multi-State Feedback**: Position + velocity control for better stability  
-- **Three State Feedback**: Position, velocity, and acceleration control
-- **Controller Comparison**: Side-by-side comparison of different controllers
-- **Error Handling**: Proper error handling for mismatched vector dimensions
-- **Motion Profile Integration**: Trajectory following simulation
+### **Combined Control**
 
-#### Combined PID + Feedback Control (`combined_control/`)
+- Feedforward + Feedback integration
+- PID + State feedback combinations
+- Performance comparison studies
 
-Shows integration of PID controllers with state feedback:
+## Performance Characteristics
 
-- **Robot Arm Simulation**: PID for position control + state feedback for stabilization
-- **Adaptive Control**: Switching between different feedback strategies based on conditions
-- **Performance Analysis**: Shows how combining controllers can improve performance
+The examples demonstrate varying performance characteristics:
 
-## Key Usage Patterns
+- **PID Controllers**: ~50-100 ns/op (depends on features enabled)
+- **Feedforward Controllers**: ~2-5 ns/op (ultra-fast calculations)
+- **Feedback Controllers**: ~0.3-10 ns/op (scales with system dimension)
 
-### PID Controller Usage
+## Getting Started
+
+1. **Install Go** (version 1.19 or later recommended)
+2. **Clone the repository** and navigate to any example directory
+3. **Run the example**: `go run main.go` (or `go run .`)
+4. **Examine the output** to understand controller behavior
+5. **Modify parameters** to see how they affect performance
+
+## Tips for Exploration
+
+- **Start Simple**: Begin with basic examples before moving to complex ones
+- **Compare Outputs**: Run similar examples with different parameters
+- **Read the Code**: Each example is well-commented and educational
+- **Experiment**: Modify gain values and observe the effects
+- **Combine Techniques**: Use insights from multiple examples in your own projects
+
+## Integration Examples
+
+The examples show how to integrate different control techniques:
 
 ```go
-// Basic PID controller with options
-controller := pid.New(2.0, 0.5, 0.1, 
-    pid.WithOutputLimits(-10.0, 10.0))
-
-// Control loop using Calculate method
-for {
-    output := controller.Calculate(setpoint, measurement)
-    // Apply output to system
-}
+// Typical combined control structure
+totalOutput := pidOutput + feedforwardOutput + feedbackOutput
 ```
 
-### Feedback Controller Usage
+This approach leverages the strengths of each control method:
 
-```go
-// NoFeedback controller (always returns 0)
-noFeedback := &feedback.NoFeedback{}
-output := noFeedback.Calculate(setpoint, measurement)
+- **PID**: Handles steady-state errors and disturbances
+- **Feedforward**: Provides predictive compensation
+- **Feedback**: Manages multi-variable system states
 
-// FullStateFeedback controller
-gains := feedback.Values{2.5, 0.4}  // position, velocity gains
-controller := feedback.NewFullStateFeedback(gains)
+## Further Learning
 
-target := feedback.Values{10.0, 0.0}    // target position, velocity
-current := feedback.Values{8.2, 1.5}    // current position, velocity
-output, err := controller.Calculate(target, current)
-```
-
-### Combined Control Usage
-
-```go
-// Combine PID and state feedback
-pidController := pid.New(2.0, 0.1, 0.05, pid.WithOutputLimits(-10.0, 10.0))
-stateFeedback := feedback.NewFullStateFeedback(feedback.Values{0.8, 0.3})
-
-// In control loop
-pidOutput := pidController.Calculate(setpoint, measurement)
-stateOutput, _ := stateFeedback.Calculate(
-    feedback.Values{0.0, 0.0},           // target error and velocity  
-    feedback.Values{error, velocity})     // current error and velocity
-totalOutput := pidOutput + stateOutput
-```
-
-## Key Learning Points
-
-Each example demonstrates different aspects of control systems:
-
-### PID Control Concepts
-
-1. **Basic Usage**: How to create, configure, and use a PID controller
-2. **Advanced Features**: When and how to use integral reset, stability thresholds, and filtering
-3. **Real-World Considerations**: Noise, saturation, mechanical effects, and disturbances
-4. **Performance Tuning**: Different gain values for different system characteristics
-5. **System Analysis**: Monitoring controller performance and system response
-
-### Feedback Control Concepts
-
-1. **Interface Design**: Clean abstractions for different control strategies
-2. **Multi-Dimensional Control**: Handling position, velocity, and acceleration feedback
-3. **Error Handling**: Proper validation for vector-based controllers
-4. **Performance Scaling**: Understanding computational costs for different approaches
-5. **Integration Patterns**: Combining multiple control strategies effectively
-
-## Modifying the Examples
-
-You can experiment with the examples by:
-
-### PID Examples
-
-- Changing PID gains to see effects on response
-- Modifying system parameters (time constants, noise levels, etc.)
-- Adding or removing advanced PID features
-- Implementing different setpoint profiles
-- Adding disturbances to test robustness
-
-### Feedback Examples
-
-- Adjusting feedback gains for different response characteristics
-- Changing vector dimensions for different control scenarios
-- Experimenting with different controller combinations
-- Implementing custom feedback strategies
-- Testing error conditions and edge cases
-
-## Common Use Cases
-
-1. **Position Control**: Single-dimension feedback for simple positioning
-2. **Motion Control**: Multi-dimension feedback for position + velocity
-3. **Stabilization**: Adding feedback to existing PID controllers
-4. **Trajectory Following**: Using state feedback for path tracking
-5. **Open-Loop Control**: Using NoFeedback as a placeholder or for pure feedforward control
-
-## Example Output
-
-Each example produces formatted output showing:
-
-- Time progression
-- Setpoint and measured values
-- Error and control output
-- System state information
-- Final performance metrics
-
-This helps visualize controller performance and understand system behavior under different conditions.
-
-## Tips for Usage
-
-### PID Controllers
-
-- Start with proportional gain only, then add integral and derivative
-- Use output limits to prevent actuator saturation
-- Enable integral reset for systems with frequent setpoint changes
-- Apply derivative filtering in noisy environments
-
-### Feedback Controllers
-
-- **Vector Dimensions**: Ensure target and current vectors have the same length as the gain vector
-- **Gain Tuning**: Start with smaller gains and increase gradually
-- **Error Checking**: Always check for errors when using FullStateFeedback
-- **Interface Compatibility**: Note that NoFeedback and FullStateFeedback have different interfaces
-- **Performance**: NoFeedback is extremely fast (~0.3 ns/op), FullStateFeedback scales with dimension
+Each example directory contains additional documentation and implementation details. The examples progress from basic concepts to advanced real-world applications, making them suitable for both learning and reference purposes.

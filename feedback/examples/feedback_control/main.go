@@ -29,7 +29,7 @@ func main() {
 	fmt.Println("   Simple proportional feedback for position control")
 
 	positionGain := feedback.Values{2.5} // Proportional gain for position
-	positionController := feedback.NewFullStateFeedback(positionGain)
+	positionController := feedback.New(positionGain)
 
 	targetPosition := feedback.Values{10.0}
 	currentPosition := feedback.Values{8.2}
@@ -50,7 +50,7 @@ func main() {
 
 	// Gains for [position, velocity]
 	pvGain := feedback.Values{1.8, 0.4}
-	pvController := feedback.NewFullStateFeedback(pvGain)
+	pvController := feedback.New(pvGain)
 
 	// Target: position=5.0, velocity=0.0 (stopped at target)
 	target := feedback.Values{5.0, 0.0}
@@ -76,7 +76,7 @@ func main() {
 
 	// Gains for [position, velocity, acceleration]
 	pvaGain := feedback.Values{1.2, 0.8, 0.1}
-	pvaController := feedback.NewFullStateFeedback(pvaGain)
+	pvaController := feedback.New(pvaGain)
 
 	// Target state: [position=0.0, velocity=0.0, acceleration=0.0]
 	targetState := feedback.Values{0.0, 0.0, 0.0}
@@ -106,7 +106,7 @@ func main() {
 	fmt.Println("   Comparing NoFeedback and FullStateFeedback outputs")
 
 	noFeedbackCtrl := &feedback.NoFeedback{}
-	fullStateCtrl := feedback.NewFullStateFeedback(feedback.Values{1.5})
+	fullStateCtrl := feedback.New(feedback.Values{1.5})
 
 	setpoint := 10.0
 	measurement := 7.0
@@ -123,7 +123,7 @@ func main() {
 	fmt.Println("6. Error Handling:")
 	fmt.Println("   Demonstrating error conditions with mismatched vector lengths")
 
-	controller := feedback.NewFullStateFeedback(feedback.Values{1.0, 0.5})
+	controller := feedback.New(feedback.Values{1.0, 0.5})
 
 	// Correct usage
 	validSetpoint := feedback.Values{5.0, 2.0}
@@ -144,7 +144,7 @@ func main() {
 
 	// Controller gains for [position, velocity]
 	gains := feedback.Values{3.0, 0.6}
-	motionController := feedback.NewFullStateFeedback(gains)
+	motionController := feedback.New(gains)
 
 	// Simulate a simple trajectory (moving from 0 to 10 over time)
 	fmt.Println("   Time | Target Pos | Current Pos | Target Vel | Current Vel | Control Output")
