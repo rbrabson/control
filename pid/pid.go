@@ -15,16 +15,14 @@ type PID struct {
 	ki float64 // Integral gain
 	kd float64 // Derivative gain
 
-	// Control limits
-	outputMin float64 // Minimum output value
-	outputMax float64 // Maximum output value
-
 	// Options
 	feedForward              float64 // Feed-forward value added to PID output
 	integralResetOnZeroCross bool    // Reset integral when error crosses zero
 	stabilityThreshold       float64 // Derivative threshold to disable integral calculation
 	integralSumMax           float64 // Maximum absolute value of integral sum
 	derivativeFilterAlpha    float64 // Low-pass filter alpha for derivative (0-1, 0=no filter, 1=max filter)
+	outputMin                float64 // Minimum output value
+	outputMax                float64 // Maximum output value
 
 	// Internal state
 	integral           float64   // Accumulated integral term
