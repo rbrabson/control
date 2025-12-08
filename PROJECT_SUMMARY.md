@@ -6,18 +6,18 @@ This project implements a comprehensive PID (Proportional-Integral-Derivative) c
 
 ## 📁 Project Structure
 
-```
+``` bash
 /Users/roybrabson/dev/control/
 ├── LICENSE
-├── README.md                   # Complete documentation
+├── README.md                  # Complete documentation
 ├── pid/
-│   ├── pid.go                  # Core PID implementation
+│   ├── pid.go                 # Core PID implementation
 │   └── pid_test.go            # Comprehensive test suite (92.1% coverage)
 └── examples/                  # Working examples
     ├── basic_control_loop/    # Basic position control
-    ├── motor_speed/          # Motor speed regulation
-    ├── position_servo/       # Servo position control
-    └── temperature_control/  # Thermal system control
+    ├── motor_speed/           # Motor speed regulation
+    ├── position_servo/        # Servo position control
+    └── temperature_control/   # Thermal system control
 ```
 
 ## 🚀 Features Implemented
