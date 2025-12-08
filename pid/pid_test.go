@@ -165,9 +165,10 @@ func TestWithOutputLimits(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pid := New(1.0, 0.1, 0.05, WithOutputLimits(tt.min, tt.max))
 
-			if pid.outputMin != tt.expectedMin || pid.outputMax != tt.expectedMax {
+			min, max := pid.GetOutputLimits()
+			if min != tt.expectedMin || max != tt.expectedMax {
 				t.Errorf("Expected limits (%f, %f), got (%f, %f)",
-					tt.expectedMin, tt.expectedMax, pid.outputMin, pid.outputMax)
+					tt.expectedMin, tt.expectedMax, min, max)
 			}
 		})
 	}
@@ -178,9 +179,17 @@ func TestSetOutputLimits(t *testing.T) {
 
 	// Test valid limits
 	pid.SetOutputLimits(-10.0, 10.0)
+	min, max := pid.GetOutputLimits()
+	if min != -10.0 || max != 10.0 {
+		t.Errorf("Expected limits (-10, 10), got (%f, %f)", min, max)
+	}
 
 	// Test invalid limits (min > max) - should not change
 	pid.SetOutputLimits(10.0, -10.0)
+	min, max = pid.GetOutputLimits()
+	if min != -10.0 || max != 10.0 {
+		t.Errorf("Limits should not change for invalid input, got (%f, %f)", min, max)
+	}
 
 	// Test clamping with large error
 	pid.Update(1000.0) // Large error
@@ -507,6 +516,12 @@ func TestSetterMethods(t *testing.T) {
 	pid.SetDerivativeFilter(0.8)
 	if pid.GetDerivativeFilter() != 0.8 {
 		t.Error("SetDerivativeFilter failed")
+	}
+
+	pid.SetOutputLimits(-5.5, 5.5)
+	min, max := pid.GetOutputLimits()
+	if min != -5.5 || max != 5.5 {
+		t.Errorf("SetOutputLimits/GetOutputLimits failed: expected (-5.5, 5.5), got (%f, %f)", min, max)
 	}
 }
 

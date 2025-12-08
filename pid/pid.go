@@ -107,18 +107,6 @@ func WithOutputLimits(min, max float64) Option {
 	}
 }
 
-// SetOutputLimits sets the minimum and maximum output values
-func (p *PID) SetOutputLimits(min, max float64) {
-	if min > max {
-		return
-	}
-	p.outputMin = min
-	p.outputMax = max
-
-	// Clamp integral to prevent windup
-	p.integral = p.clamp(p.integral)
-}
-
 // SetGains updates the PID gains
 func (p *PID) SetGains(kp, ki, kd float64) {
 	p.kp = kp
@@ -306,4 +294,21 @@ func (p *PID) SetDerivativeFilter(alpha float64) {
 // GetDerivativeFilter returns the current derivative filter alpha value
 func (p *PID) GetDerivativeFilter() float64 {
 	return p.derivativeFilterAlpha
+}
+
+// SetOutputLimits sets the minimum and maximum output values
+func (p *PID) SetOutputLimits(min, max float64) {
+	if min > max {
+		return
+	}
+	p.outputMin = min
+	p.outputMax = max
+
+	// Clamp integral to prevent windup
+	p.integral = p.clamp(p.integral)
+}
+
+// GetOutputLimits returns the current output limits
+func (p *PID) GetOutputLimits() (min, max float64) {
+	return p.outputMin, p.outputMax
 }
