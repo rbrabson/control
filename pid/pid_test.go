@@ -156,9 +156,9 @@ func TestSetOutputLimits(t *testing.T) {
 	pid.SetOutputLimits(10.0, -10.0)
 
 	// Test clamping with large error
-	output := pid.Update(1000.0) // Large error
+	pid.Update(1000.0) // Large error
 	time.Sleep(10 * time.Millisecond)
-	output = pid.Update(1000.0)
+	output := pid.Update(1000.0)
 
 	if output > 10.0 || output < -10.0 {
 		t.Errorf("Output %f should be clamped between -10 and 10", output)
