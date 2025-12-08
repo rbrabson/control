@@ -107,13 +107,6 @@ func WithOutputLimits(min, max float64) Option {
 	}
 }
 
-// SetGains updates the PID gains
-func (p *PID) SetGains(kp, ki, kd float64) {
-	p.kp = kp
-	p.ki = ki
-	p.kd = kd
-}
-
 // Update computes the PID output given the current error (setpoint - measurement)
 func (p *PID) Update(error float64) float64 {
 	now := time.Now()
@@ -221,6 +214,13 @@ func (p *PID) clamp(value float64) float64 {
 		return p.outputMin
 	}
 	return value
+}
+
+// SetGains updates the PID gains
+func (p *PID) SetGains(kp, ki, kd float64) {
+	p.kp = kp
+	p.ki = ki
+	p.kd = kd
 }
 
 // Reset clears the internal state of the PID controller
