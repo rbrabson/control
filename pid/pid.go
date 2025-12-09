@@ -1,6 +1,7 @@
 package pid
 
 import (
+	"log/slog"
 	"math"
 	"time"
 )
@@ -111,8 +112,15 @@ func WithOutputLimits(min, max float64) Option {
 // optional percent overshoot (po). If po is 0, critical dampening is used.
 func WithDampening(ka, kv, po float64) Option {
 	return func(p *PID) {
-		// If this inequality is true, kd will be knegative and there will be a scary non-minimum phase system
+		// If this inequality is true, kd will be knegative and there will be a scary non-minimum phase system.
+		// There isn't a good way to return the error here, so we log the error and return.
 		if p.kp < kv*kv/4*ka {
+			slog.Error("invalid kp, kv, and ka values for PID.WithDampening",
+				"kp", p.kp,
+				"kv", kv,
+				"ka", ka,
+				"kv^2 / 4*ka", kv*kv/4*ka,
+			)
 			return
 		}
 
