@@ -162,7 +162,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("   %d    | Error: %v\n", t, err)
 		} else {
-			fmt.Printf("   %d    |   %6.2f   |    %6.2f    |   %6.2f   |    %6.2f    |     %6.2f\n",
+			fmt.Printf("   %d    |   %6.2f   |    %6.2f   |   %6.2f   |    %6.2f   |     %6.2f\n",
 				t, targetPos, currentPos, targetVel, currentVel, output)
 		}
 	}
