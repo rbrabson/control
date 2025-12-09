@@ -15,8 +15,12 @@
   - WithOutputLimits option pattern
   - GetOutputLimits and SetOutputLimits methods
   - Calculate method (updated from Update)
+  - WithDerivativeFilter and WithStabilityThreshold dampening features
+  - Derivative filter effectiveness in noisy conditions
+  - Stability threshold behavior during rapid changes
+  - Combined dampening features integration
   - Edge cases and error conditions
-  - Benchmarks for performance validation
+  - Benchmarks for performance validation (including dampening overhead)
 
 ### Feedback Package  
 

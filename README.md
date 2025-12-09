@@ -17,7 +17,8 @@ A comprehensive control systems library in Go featuring PID controllers, feedbac
 - **Integral reset on zero crossover** to prevent wrong-direction movement
 - **Stability threshold** to disable integral calculation during high-speed changes
 - **Integral sum capping** for additional windup protection
-- **Derivative low-pass filtering** to reduce measurement noise
+- **Derivative low-pass filtering** with configurable alpha (0.0-1.0) to reduce measurement noise
+- **Combined dampening features** for enhanced stability in noisy environments
 - **Gravity compensation** for vertical motion systems
 - **Cosine compensation** for angular/rotating systems
 - **Combined compensation** strategies for complex machinery

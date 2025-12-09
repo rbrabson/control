@@ -107,6 +107,28 @@ func WithOutputLimits(min, max float64) Option {
 	}
 }
 
+// WithDampening configures the derivative gain (kd) based on desired dampening characteristics, with an
+// optional percent overshoot (po). If po is 0, critical dampening is used.
+func WithDampening(ka, kv, po float64) Option {
+	return func(p *PID) {
+		// If this inequality is true, kd will be knegative and there will be a scary non-minimum phase system
+		if p.kp < kv*kv/4*ka {
+			return
+		}
+
+		if po == 0 {
+			// Critical dampening
+			p.kd = 2*math.Sqrt(ka*kv) - ka
+		} else {
+			// Calculate damping ratio from percent overshoot
+			po = math.Max(po/100, 0.01) // Prevent log(0)
+			poLog := math.Log(po)
+			zeta := -poLog / math.Sqrt(math.Pi*math.Pi+poLog*poLog)
+			p.kd = 2*zeta*math.Sqrt(ka*kv) - kv
+		}
+	}
+}
+
 // Calculate computes the PID output for the given reference (setpoint) and current state (measurement)
 func (p *PID) Calculate(reference, state float64) float64 {
 	now := time.Now()

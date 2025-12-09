@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **15 complete examples** across five control packages:
+The library includes **16 complete examples** across five control packages:
 
-- **4 PID Controller Examples** - Classic feedback control with advanced features
+- **5 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
 - **2 Motion Profile Examples** - Smooth trapezoidal motion generation
@@ -175,11 +175,49 @@ Max Overshoot: 1.2°, Settling Time: 0.45s
 
 **Run Command**: `cd pid/examples/position_servo && go run main.go`
 
+### 5. PID Dampening Features (`pid/examples/dampening/`)
+
+**Purpose**: Advanced PID control with noise rejection and stability enhancement
+
+**Key Features**:
+
+- Derivative filtering for measurement noise reduction
+- Stability threshold for integral windup prevention
+- Comparative analysis of Basic, Filtered, and Damped PID controllers
+- Realistic noise simulation and system response modeling
+- Performance metrics and educational explanations
+
+**What You'll Learn**:
+
+- When and how to use derivative filtering (α parameter: 0.0-1.0)
+- Stability threshold configuration for dynamic systems
+- Noise rejection techniques in control systems
+- Performance impact analysis of dampening features
+- Real-world control system modeling with sensor noise
+
+**Sample Output**:
+
+``` bash
+Target: 100.0, Initial: 20.0, Noise: ±2.0
+Time    Basic   Filtered        Damped  B_Out   F_Out   D_Out
+----    -----   --------        ------  -----   -----   -----
+0.0     20.0    20.0            20.0    0.0     0.0     0.0
+5.0     18.0    23.0            19.0    -50.0   50.0    50.0
+10.0    14.0    23.0            22.0    -50.0   50.0    50.0
+
+Performance Analysis:
+Basic PID Error:    87.0% of target
+Filtered PID Error: 73.0% of target  
+Damped PID Error:   80.0% of target
+```
+
+**Run Command**: `cd pid/examples/dampening && go run main.go`
+
 ---
 
 ## Feedback Controller Examples
 
-### 5. Full State Feedback Control (`feedback/examples/feedback_control/`)
+### 6. Full State Feedback Control (`feedback/examples/feedback_control/`)
 
 **Purpose**: Multi-dimensional state feedback control for complex systems
 
