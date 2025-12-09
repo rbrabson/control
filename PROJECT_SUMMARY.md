@@ -2,7 +2,7 @@
 
 ## Project Status: COMPLETE ✅
 
-This project implements a comprehensive control systems library in Go featuring PID controllers, feedback control systems, and feedforward controllers, designed for robotics, automation, and embedded applications.
+This project implements a comprehensive control systems library in Go featuring PID controllers, feedback control systems, feedforward controllers, and interpolating lookup tables, designed for robotics, automation, and embedded applications.
 
 ## 📁 Project Structure
 
@@ -44,6 +44,13 @@ This project implements a comprehensive control systems library in Go featuring 
 │   └── examples/                # Motion profile examples
 │       ├── basic/               # Basic trapezoidal profile
 │       └── triangle/            # Triangle profile demonstration
+├── interplut/
+│   ├── interplut.go             # Interpolating lookup table with cubic splines
+│   ├── interplut_test.go        # Comprehensive test suite (75.4% coverage)
+│   ├── README.md                # InterpLUT documentation
+│   └── examples/                # InterpLUT examples
+│       ├── basic/               # Basic shooter velocity mapping
+│       └── temperature/         # Non-linear temperature control
 └── examples/
     └── README.md                # Master examples guide
 ```
@@ -125,9 +132,25 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Test Coverage**: 100.0% with 45+ comprehensive test cases
 - **Memory**: Zero allocations during calculations, minimal initialization
 
+### Motion Profile Performance
+
+- **Profile Creation**: ~21μs for 1000 points, ~445ns for 10 points
+- **State Calculation**: ~50 nanoseconds per call
+- **Memory**: Efficient storage with minimal allocation overhead
+- **Test Coverage**: 100.0% with comprehensive validation
+- **Features**: Trapezoidal/triangle profiles, bidirectional motion, WPILib compatibility
+
+### InterpLUT Performance
+
+- **Interpolation Lookup**: ~36 nanoseconds per call
+- **LUT Creation**: ~2.4μs for 100 points, ~448ns for 10 points
+- **Algorithm**: Cubic Hermite spline with monotonicity preservation
+- **Test Coverage**: 75.4% with comprehensive interpolation validation
+- **Features**: FTCLib compatible, automatic sorting, robust error handling
+
 ### Overall System
 
-- **Combined Tests**: All 120+ test cases passing across three packages
+- **Combined Tests**: All 137+ test cases passing across five packages
 - **Benchmarks**: Performance validated across all components
 - **Stability**: Thoroughly tested with various scenarios and edge cases
 - **Real-time Ready**: All controllers suitable for high-frequency control loops

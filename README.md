@@ -39,7 +39,7 @@ go get github.com/rbrabson/control
 
 ## Packages
 
-This library provides four main packages:
+This library provides five main packages:
 
 ### PID Package (`control/pid`)
 
@@ -80,6 +80,17 @@ Trapezoidal motion profile generation for smooth trajectory planning:
 - WPILib-compatible implementation
 - Constraint validation and error handling
 - Complete trajectory information (position, velocity, acceleration)
+
+### InterpLUT Package (`control/interplut`)
+
+Interpolating lookup tables with cubic Hermite spline interpolation:
+
+- Smooth interpolation between control points using cubic splines
+- Monotonicity preservation for stable control behavior
+- High-performance lookups (~36ns per interpolation)
+- FTCLib/WPILib compatible algorithm implementation
+- Automatic sorting and error handling
+- Perfect for robotics sensor calibration and non-linear mappings
 
 - **FullStateFeedback**: Multi-dimensional state feedback control
 

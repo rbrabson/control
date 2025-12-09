@@ -4,12 +4,13 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **12 complete examples** across three control packages:
+The library includes **14 complete examples** across five control packages:
 
 - **4 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
-- **2 Combined Examples** - Integration of multiple control techniques
+- **2 Motion Profile Examples** - Smooth trapezoidal motion generation
+- **2 InterpLUT Examples** - Interpolating lookup tables with cubic splines
 
 ## Quick Start Guide
 
@@ -38,6 +39,9 @@ for dir in feedforward/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir"
 
 # Feedback Examples
 for dir in feedback/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
+
+# InterpLUT Examples
+for dir in interplut/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
 ```
 
 ---
@@ -525,6 +529,69 @@ func CombinedControl(setpoint, current, velocity, acceleration, position float64
 - Ensure proper time step sizing for stability
 - Verify input/output scaling for your application
 - Use performance metrics to validate controller effectiveness
+
+---
+
+## InterpLUT Examples
+
+### 1. Basic Shooter Velocity (`interplut/examples/basic/`)
+
+**Purpose**: Demonstrate smooth interpolation for robotics shooter velocity mapping
+
+**Key Features Demonstrated**:
+
+- Control point addition and LUT creation
+- Smooth interpolation between discrete velocity settings
+- Exact matches at control points
+- Error handling for out-of-bounds inputs
+
+**Application**: Robot shooter systems where velocity must vary smoothly with target distance
+
+**Sample Output**:
+
+```
+Distance (m) | Velocity (%)
+-------------|-------------
+    1.5     |    0.272
+    2.0     |    0.359
+    2.5     |    0.456
+    3.0     |    0.577
+```
+
+**Key Learning Points**:
+
+- How to set up control points for non-linear mappings
+- Understanding cubic spline interpolation benefits
+- Proper error handling in robotics applications
+
+### 2. Temperature Control (`interplut/examples/temperature/`)
+
+**Purpose**: Non-linear temperature control with thermodynamic modeling
+
+**Key Features Demonstrated**:
+
+- Non-linear heater power curves
+- Monotonicity preservation for stable control
+- ASCII visualization of response curves
+- Comparison with linear interpolation methods
+
+**Application**: Industrial heating systems, thermal management, process control
+
+**Sample Output**:
+
+```
+Temperature (°C) | Power (%) | Notes
+-----------------|-----------|--------
+      60.0       |   0.208   | Hot water
+      85.0       |   0.362   | Coffee brewing
+      120.0       |   0.558   | Steam generation
+```
+
+**Key Learning Points**:
+
+- Modeling real-world non-linear systems
+- Benefits of smooth interpolation over linear methods
+- Visual representation of control curves
 
 ---
 
