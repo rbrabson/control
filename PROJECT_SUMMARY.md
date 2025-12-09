@@ -38,6 +38,12 @@ This project implements a comprehensive control systems library in Go featuring 
 │       ├── arm/                 # Cosine compensation
 │       ├── crane/               # Combined compensations
 │       └── compare/             # Controller comparison
+├── motionprofile/
+│   ├── motionprofile.go         # Trapezoidal motion profile generator
+│   ├── motionprofile_test.go    # Comprehensive test suite (100% coverage)
+│   └── examples/                # Motion profile examples
+│       ├── basic/               # Basic trapezoidal profile
+│       └── triangle/            # Triangle profile demonstration
 └── examples/
     └── README.md                # Master examples guide
 ```
@@ -77,6 +83,17 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Combined Compensation**: Multiple compensation strategies simultaneously
 - **Ultra-High Performance**: 2-5 nanoseconds per calculation, zero allocations
 - **Multiple Controller Types**: Basic, Gravity, Cosine, and Combined
+
+### Motion Profile Generation (`motionprofile/`)
+
+- **Trapezoidal Motion Profiles**: Smooth acceleration, cruise, and deceleration phases
+- **Triangle Profiles**: Automatic detection when distance is too short for cruise phase
+- **Bidirectional Motion**: Handles both forward and backward movement seamlessly
+- **WPILib-Compatible**: Based on proven robotics motion profile algorithms
+- **Real-Time Performance**: ~50ns per state calculation, suitable for control loops
+- **Flexible Configuration**: Arbitrary initial and final velocities with constraint validation
+- **Complete State Information**: Position, velocity, acceleration, and time at any point
+- **Trajectory Planning**: Time-to-target and remaining distance calculations
 
 ### Integration Capabilities
 

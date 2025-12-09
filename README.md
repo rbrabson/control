@@ -39,7 +39,7 @@ go get github.com/rbrabson/control
 
 ## Packages
 
-This library provides three main packages:
+This library provides four main packages:
 
 ### PID Package (`control/pid`)
 
@@ -69,6 +69,17 @@ Predictive feedforward controllers with advanced compensation:
 - Combined compensation strategies
 - Options pattern for flexible configuration
 - Ultra-fast calculations (2-5 ns/op)
+
+### Motion Profile Package (`control/motionprofile`)
+
+Trapezoidal motion profile generation for smooth trajectory planning:
+
+- Trapezoidal and triangle motion profiles
+- Bidirectional motion support (forward/backward)
+- Real-time state calculation (~50ns per calculation)
+- WPILib-compatible implementation
+- Constraint validation and error handling
+- Complete trajectory information (position, velocity, acceleration)
 
 - **FullStateFeedback**: Multi-dimensional state feedback control
 
@@ -386,6 +397,27 @@ positionController := pid.New(1.5, 0.2, 0.05,
     pid.WithIntegralSumMax(10.0),        // Prevent integral windup
     pid.WithStabilityThreshold(5.0),     // Disable integral during rapid movement
 )
+```
+
+### Motion Profile Control
+
+```go
+// Generate smooth trapezoidal motion profile
+constraints := motionprofile.Constraints{
+    MaxVelocity: 5.0,      // max velocity units/sec
+    MaxAcceleration: 10.0, // max acceleration units/sec²
+}
+start := motionprofile.State{Position: 0.0, Velocity: 0.0}
+goal := motionprofile.State{Position: 20.0, Velocity: 0.0}
+
+profile := motionprofile.New(constraints, goal, start)
+
+// Use in control loop
+for t := 0.0; !profile.IsFinished(t); t += 0.02 {
+    setpoint := profile.Calculate(t)
+    // Feed setpoint to position controller
+    output := positionController.Calculate(setpoint.Position, currentPosition)
+}
 ```
 
 ## Feedforward Control
