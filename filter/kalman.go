@@ -8,6 +8,15 @@ import (
 	"errors"
 )
 
+// Float64Stack is a type alias for SizedStack with float64 elements for backward compatibility.
+type Float64Stack = SizedStack[float64]
+
+// NewFloat64Stack creates a new float64 sized stack with the given capacity.
+// This function maintains backward compatibility with existing code.
+func NewFloat64Stack(capacity int) *Float64Stack {
+	return NewSizedStack[float64](capacity)
+}
+
 // KalmanFilter implements a Kalman filter that uses least squares regression as its model.
 type KalmanFilter struct {
 	q          float64           // Sensor covariance
@@ -16,7 +25,7 @@ type KalmanFilter struct {
 	p          float64           // Error covariance estimate
 	k          float64           // Kalman gain
 	x          float64           // State estimate
-	estimates  *SizedStack       // Stack of recent estimates
+	estimates  *Float64Stack     // Stack of recent estimates
 	regression *LinearRegression // Linear regression for prediction
 }
 
@@ -41,7 +50,7 @@ func NewKalmanFilter(q, r float64, n int) (*KalmanFilter, error) {
 		p:         1.0,
 		k:         0.0,
 		x:         0.0,
-		estimates: NewSizedStack(n),
+		estimates: NewFloat64Stack(n),
 	}
 
 	// Initialize stack with zeros
@@ -131,7 +140,7 @@ func (kf *KalmanFilter) Reset() {
 	kf.x = 0.0
 
 	// Reinitialize stack with zeros
-	kf.estimates = NewSizedStack(kf.n)
+	kf.estimates = NewFloat64Stack(kf.n)
 	for i := 0; i < kf.n; i++ {
 		kf.estimates.Push(0.0)
 	}

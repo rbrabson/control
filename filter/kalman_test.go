@@ -8,7 +8,7 @@ import (
 // TestSizedStack tests the SizedStack functionality
 func TestSizedStack(t *testing.T) {
 	t.Run("Basic operations", func(t *testing.T) {
-		stack := NewSizedStack(3)
+		stack := NewFloat64Stack(3)
 
 		if stack.Size() != 0 {
 			t.Errorf("Expected size 0, got %d", stack.Size())
@@ -29,7 +29,7 @@ func TestSizedStack(t *testing.T) {
 	})
 
 	t.Run("Capacity overflow", func(t *testing.T) {
-		stack := NewSizedStack(2)
+		stack := NewFloat64Stack(2)
 
 		stack.Push(1.0)
 		stack.Push(2.0)
@@ -49,7 +49,7 @@ func TestSizedStack(t *testing.T) {
 	})
 
 	t.Run("ToArray", func(t *testing.T) {
-		stack := NewSizedStack(3)
+		stack := NewFloat64Stack(3)
 		stack.Push(1.0)
 		stack.Push(2.0)
 
@@ -64,6 +64,65 @@ func TestSizedStack(t *testing.T) {
 			if array[i] != v {
 				t.Errorf("Expected array[%d] = %f, got %f", i, v, array[i])
 			}
+		}
+	})
+
+	t.Run("Generic types - string", func(t *testing.T) {
+		stack := NewSizedStack[string](2)
+
+		stack.Push("first")
+		stack.Push("second")
+		stack.Push("third") // Should remove "first"
+
+		if stack.Size() != 2 {
+			t.Errorf("Expected size 2, got %d", stack.Size())
+		}
+
+		if stack.Peek() != "third" {
+			t.Errorf("Expected peek 'third', got '%s'", stack.Peek())
+		}
+
+		if stack.Get(0) != "second" {
+			t.Errorf("Expected first element 'second', got '%s'", stack.Get(0))
+		}
+
+		array := stack.ToArray()
+		expected := []string{"second", "third"}
+
+		if len(array) != len(expected) {
+			t.Errorf("Expected array length %d, got %d", len(expected), len(array))
+		}
+
+		for i, v := range expected {
+			if array[i] != v {
+				t.Errorf("Expected array[%d] = %s, got %s", i, v, array[i])
+			}
+		}
+	})
+
+	t.Run("Generic types - int", func(t *testing.T) {
+		stack := NewSizedStack[int](3)
+
+		stack.Push(10)
+		stack.Push(20)
+		stack.Push(30)
+
+		if stack.Size() != 3 {
+			t.Errorf("Expected size 3, got %d", stack.Size())
+		}
+
+		if stack.Peek() != 30 {
+			t.Errorf("Expected peek 30, got %d", stack.Peek())
+		}
+
+		// Test empty stack returns zero value
+		emptyStack := NewSizedStack[int](1)
+		if emptyStack.Peek() != 0 {
+			t.Errorf("Expected empty stack peek to return 0, got %d", emptyStack.Peek())
+		}
+
+		if emptyStack.Get(0) != 0 {
+			t.Errorf("Expected empty stack get to return 0, got %d", emptyStack.Get(0))
 		}
 	})
 }
