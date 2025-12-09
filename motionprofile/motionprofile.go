@@ -136,18 +136,19 @@ func (mp *MotionProfile) Calculate(t float64) State {
 	var state State
 	state.Time = t
 
-	if t <= mp.accelerationTime {
+	switch {
+	case t <= mp.accelerationTime:
 		// Acceleration phase
 		state.Acceleration = mp.constraints.MaxAcceleration * direction
 		state.Velocity = mp.initial.Velocity + state.Acceleration*t
 		state.Position = mp.initial.Position + mp.initial.Velocity*t + 0.5*state.Acceleration*t*t
-	} else if t <= mp.accelerationTime+mp.cruiseTime {
+	case t <= mp.accelerationTime+mp.cruiseTime:
 		// Cruise phase
 		state.Acceleration = 0
 		state.Velocity = mp.cruiseVelocity
 		cruiseT := t - mp.accelerationTime
 		state.Position = mp.initial.Position + mp.accelerationDistance + mp.cruiseVelocity*cruiseT
-	} else {
+	default:
 		// Deceleration phase
 		decelT := t - mp.accelerationTime - mp.cruiseTime
 		state.Acceleration = -mp.constraints.MaxAcceleration * direction
@@ -187,7 +188,8 @@ func (mp *MotionProfile) TimeLeftUntil(targetPosition float64) float64 {
 	}
 
 	// Check which phase the target is in
-	if direction*targetDistance <= direction*mp.accelerationDistance {
+	switch {
+	case direction*targetDistance <= direction*mp.accelerationDistance:
 		// Target is in acceleration phase
 		// s = v0*t + 0.5*a*t^2, solve for t
 		a := 0.5 * mp.constraints.MaxAcceleration * direction
@@ -198,11 +200,11 @@ func (mp *MotionProfile) TimeLeftUntil(targetPosition float64) float64 {
 			return 0
 		}
 		return (-b + math.Sqrt(discriminant)) / (2 * a)
-	} else if direction*targetDistance <= direction*(mp.accelerationDistance+mp.cruiseDistance) {
+	case direction*targetDistance <= direction*(mp.accelerationDistance+mp.cruiseDistance):
 		// Target is in cruise phase
 		cruiseDistance := targetDistance - mp.accelerationDistance
 		return mp.accelerationTime + cruiseDistance/mp.cruiseVelocity
-	} else {
+	default:
 		// Target is in deceleration phase
 		remainingDistance := totalDistance - targetDistance
 		// Working backward from end using deceleration
