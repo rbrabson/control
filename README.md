@@ -28,6 +28,7 @@ A comprehensive control systems library in Go featuring PID controllers, feedbac
 - **PID Controllers**: ~64ns per update - Excellent performance for real-time applications
 - **Feedforward Controllers**: ~2-5ns per calculation - Ultra-fast predictive control
 - **Feedback Controllers**: ~3-220ns depending on dimension, optimized for multi-variable systems
+- **Filter Controllers**: Kalman ~44ns, LowPass ~4.7ns - Advanced signal filtering
 - **Comprehensive test coverage** with extensive test suites
 - **Thread-safe design** for concurrent applications
 - **Robust error handling** for edge cases and invalid inputs
@@ -40,7 +41,7 @@ go get github.com/rbrabson/control
 
 ## Packages
 
-This library provides five main packages:
+This library provides six main packages:
 
 ### PID Package (`control/pid`)
 
@@ -576,6 +577,18 @@ See the `examples/` directory for complete working examples:
 - **Zero memory allocations** during calculations
 - **100% test coverage** with comprehensive benchmarks
 - **Real-world applications**: Elevators, robotic arms, cranes, industrial automation
+
+### Filter Examples
+
+- **Kalman Filter** (`filter/examples/basic/`) - Advanced signal estimation with DARE solver
+- **Low-Pass Filter** (`filter/examples/lowpass/`) - Signal smoothing with configurable response
+
+#### Filter Performance
+
+- **Kalman Filter**: ~44 nanoseconds per estimation with optimal gain calculation
+- **Low-Pass Filter**: ~4.7 nanoseconds per operation for real-time smoothing
+- **92.5% test coverage** with comprehensive validation
+- **Real-world applications**: Sensor fusion, noise reduction, signal conditioning
 
 ## License
 

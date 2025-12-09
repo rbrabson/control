@@ -4,13 +4,14 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **16 complete examples** across five control packages:
+The library includes **18 complete examples** across six control packages:
 
 - **5 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
 - **2 Motion Profile Examples** - Smooth trapezoidal motion generation
 - **3 InterpLUT Examples** - Interpolating lookup tables with cubic splines
+- **2 Filter Examples** - Kalman filtering and low-pass signal smoothing
 
 ## Quick Start Guide
 
@@ -42,6 +43,9 @@ for dir in feedback/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") =
 
 # InterpLUT Examples
 for dir in interplut/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
+
+# Filter Examples
+for dir in filter/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
 ```
 
 ---
@@ -670,6 +674,98 @@ Step | Arm Pos | Target | Kp    | Ki   | Kd   | Reset | Output
 - Efficient controller reuse patterns
 - Gravity compensation strategies for robotic systems
 - Smart reset logic to balance performance and control continuity
+
+---
+
+---
+
+## Filter Examples
+
+### 1. Kalman Filter Signal Estimation (`filter/examples/basic/`)
+
+**Purpose**: Advanced state estimation with optimal filtering for noisy signals
+
+**Key Features**:
+
+- Kalman filter with DARE (Discrete Algebraic Riccati Equation) solver
+- Linear regression-based process model for trend prediction
+- Configurable process noise (Q) and measurement noise (R) parameters
+- Sized stack for maintaining filter history
+- Automatic optimal gain calculation
+
+**What You'll Learn**:
+
+- Kalman filter initialization and configuration
+- Process vs. measurement noise trade-offs
+- DARE solver for optimal gain computation
+- Linear regression for signal prediction
+- Real-time filtering with performance analysis
+
+**Sample Output**:
+
+```bash
+Kalman Filter Signal Estimation Example
+======================================
+Filter Parameters: Q=0.01, R=0.50, N=5
+Kalman Gain (K): 0.1318
+Error Covariance (P): 0.0659
+
+Time    True    Noisy   Kalman  Error
+----    ----    -----   ------  -----
+0.0     10.00   8.42    1.11    8.89
+1.0     10.70   10.91   7.83    2.87
+...
+Performance Summary:
+Average Measurement Error: 0.546
+Average Kalman Error:      2.389
+```
+
+**Run Command**: `cd filter/examples/basic && go run main.go`
+
+---
+
+### 2. Low-Pass Filter Signal Smoothing (`filter/examples/lowpass/`)
+
+**Purpose**: Simple and effective signal smoothing with configurable response characteristics
+
+**Key Features**:
+
+- First-order low-pass filter with gain parameter (0 < gain < 1)
+- Multiple filter comparison (different gain values)
+- Performance analysis with noise reduction metrics
+- Step response comparison for different gains
+- Usage guidelines for different applications
+
+**What You'll Learn**:
+
+- Low-pass filter configuration and gain selection
+- Trade-offs between response speed and noise rejection
+- Step response characteristics for different gains
+- Performance analysis and improvement metrics
+- Filter selection guidelines for various applications
+
+**Sample Output**:
+
+```bash
+Low-Pass Filter Signal Smoothing Example
+=======================================
+Filter Configuration:
+  Low Gain (0.1):  Fast response, minimal smoothing
+  Med Gain (0.5):  Balanced response and smoothing
+  High Gain (0.9): Slow response, maximum smoothing
+
+Time    Noisy   Low(0.1)        Med(0.5)        High(0.9)
+----    -----   --------        --------        ---------
+0.0     -0.75   -0.75           -0.75           -0.75
+...
+Performance Analysis:
+Average Errors (vs clean signal):
+  Raw Noisy:     0.696
+  Low Gain:      0.625 (10.2% improvement)
+  Medium Gain:   0.522 (24.9% improvement)
+```
+
+**Run Command**: `cd filter/examples/lowpass && go run main.go`
 
 ---
 

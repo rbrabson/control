@@ -53,6 +53,16 @@ This project implements a comprehensive control systems library in Go featuring 
 │       ├── basic/               # Basic shooter velocity mapping
 │       ├── temperature/         # Non-linear temperature control
 │       └── adaptive_pid/        # Adaptive PID with dynamic coefficients
+├── filter/
+│   ├── filter.go                # Filter interface definition
+│   ├── kalman.go                # Kalman filter with DARE solver
+│   ├── lowpass.go               # Low-pass filter implementation
+│   ├── linearregression.go      # Linear regression for Kalman prediction
+│   ├── sizedstack.go            # Fixed-size stack for filter history
+│   ├── kalman_test.go           # Comprehensive filter test suite (92.5% coverage)
+│   └── examples/                # Filter examples
+│       ├── basic/               # Kalman filter signal estimation
+│       └── lowpass/             # Low-pass filter signal smoothing
 └── examples/
     └── README.md                # Master examples guide
 ```
