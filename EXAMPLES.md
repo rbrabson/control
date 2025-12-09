@@ -4,13 +4,13 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **14 complete examples** across five control packages:
+The library includes **15 complete examples** across five control packages:
 
 - **4 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
 - **2 Motion Profile Examples** - Smooth trapezoidal motion generation
-- **2 InterpLUT Examples** - Interpolating lookup tables with cubic splines
+- **3 InterpLUT Examples** - Interpolating lookup tables with cubic splines
 
 ## Quick Start Guide
 
@@ -592,6 +592,46 @@ Temperature (°C) | Power (%) | Notes
 - Modeling real-world non-linear systems
 - Benefits of smooth interpolation over linear methods
 - Visual representation of control curves
+
+### 3. Adaptive PID Control (`interplut/examples/adaptive_pid/`)
+
+**Purpose**: Demonstrates dynamic PID coefficient adjustment using InterpLUT for varying system dynamics
+
+**Key Features Demonstrated**:
+
+- Single PID controller reuse with dynamic gain updates
+- InterpLUT-based coefficient lookup for different operating points
+- Smart controller reset logic to preserve control history
+- Gravity-compensated control for robotic arm simulation
+- Performance optimization through controller reuse
+
+**Application**: Robotic arms, variable-load systems, multi-operating-point control
+
+**Sample Output**:
+
+``` bash
+Adaptive PID Coefficient Lookup Demonstration (Single Controller):
+==================================================================
+Arm Angle | Kp    | Ki   | Kd   | Gains Changed | Reset | Notes
+----------|-------|------|------|---------------|-------|---------
+     0.0° |  1.00 | 0.20 | 0.05 |       No      |   No  | Vertical down
+    22.5° |  1.36 | 0.16 | 0.07 |      Yes      |  Yes  | Light gravity
+    90.0° |  3.00 | 0.05 | 0.15 |      Yes      |  Yes  | Max gravity
+
+Simulated Control Loop (Single Controller, Dynamic Gains):
+Step | Arm Pos | Target | Kp    | Ki   | Kd   | Reset | Output
+-----|---------|--------|-------|------|------|-------|---------
+   1  |    0.0° |   90.0° |  1.00 | 0.20 | 0.05 |    No |    0.00
+   2  |   15.0° |   90.0° |  1.24 | 0.17 | 0.06 |   Yes |    0.00
+```
+
+**Key Learning Points**:
+
+- Dynamic PID controller adaptation using SetGains() method
+- InterpLUT coefficient lookup for adaptive control systems
+- Efficient controller reuse patterns
+- Gravity compensation strategies for robotic systems
+- Smart reset logic to balance performance and control continuity
 
 ---
 

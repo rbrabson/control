@@ -50,7 +50,8 @@ This project implements a comprehensive control systems library in Go featuring 
 │   ├── README.md                # InterpLUT documentation
 │   └── examples/                # InterpLUT examples
 │       ├── basic/               # Basic shooter velocity mapping
-│       └── temperature/         # Non-linear temperature control
+│       ├── temperature/         # Non-linear temperature control
+│       └── adaptive_pid/        # Adaptive PID with dynamic coefficients
 └── examples/
     └── README.md                # Master examples guide
 ```
@@ -100,6 +101,15 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Flexible Configuration**: Arbitrary initial and final velocities with constraint validation
 - **Complete State Information**: Position, velocity, acceleration, and time at any point
 - **Trajectory Planning**: Time-to-target and remaining distance calculations
+
+### Interpolating Lookup Tables (`interplut/`)
+
+- **Cubic Hermite Spline Interpolation**: Smooth interpolation with monotonicity preservation
+- **High Performance**: ~36ns per lookup, suitable for real-time control
+- **FTCLib Compatibility**: Algorithm based on com.arcrobotics.ftclib.util.InterpLUT
+- **Flexible Data Management**: Add points dynamically, automatic sorting and validation
+- **Adaptive Control Integration**: Dynamic PID coefficient lookup for varying system dynamics
+- **Comprehensive Examples**: Shooter velocity mapping, temperature control, and adaptive PID systems
 
 ### Integration Capabilities
 

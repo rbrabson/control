@@ -89,8 +89,9 @@ Interpolating lookup tables with cubic Hermite spline interpolation:
 - High-performance lookups (~36ns per interpolation)
 - Automatic sorting and error handling
 - Perfect for robotics sensor calibration and non-linear mappings
+- Adaptive PID control with dynamic coefficient lookup
 
-- **FullStateFeedback**: Multi-dimensional state feedback control
+Examples include basic shooter velocity mapping, non-linear temperature control, and adaptive PID control with dynamic coefficient lookup.
 
 ## Quick Start
 
