@@ -96,7 +96,6 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Trapezoidal Motion Profiles**: Smooth acceleration, cruise, and deceleration phases
 - **Triangle Profiles**: Automatic detection when distance is too short for cruise phase
 - **Bidirectional Motion**: Handles both forward and backward movement seamlessly
-- **WPILib-Compatible**: Based on proven robotics motion profile algorithms
 - **Real-Time Performance**: ~50ns per state calculation, suitable for control loops
 - **Flexible Configuration**: Arbitrary initial and final velocities with constraint validation
 - **Complete State Information**: Position, velocity, acceleration, and time at any point
@@ -138,7 +137,7 @@ This project implements a comprehensive control systems library in Go featuring 
 - **State Calculation**: ~50 nanoseconds per call
 - **Memory**: Efficient storage with minimal allocation overhead
 - **Test Coverage**: 100.0% with comprehensive validation
-- **Features**: Trapezoidal/triangle profiles, bidirectional motion, WPILib compatibility
+- **Features**: Trapezoidal/triangle profiles, bidirectional motion
 
 ### InterpLUT Performance
 
@@ -146,7 +145,6 @@ This project implements a comprehensive control systems library in Go featuring 
 - **LUT Creation**: ~2.4μs for 100 points, ~448ns for 10 points
 - **Algorithm**: Cubic Hermite spline with monotonicity preservation
 - **Test Coverage**: 75.4% with comprehensive interpolation validation
-- **Features**: FTCLib compatible, automatic sorting, robust error handling
 
 ### Overall System
 

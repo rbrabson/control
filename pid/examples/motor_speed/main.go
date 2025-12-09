@@ -1,7 +1,7 @@
 // Motor Speed Control Example
 //
 // This example demonstrates using a PID controller for motor speed control,
-// which is common in robotics applications like FTC/FRC robots. It shows:
+// which is common in robotics applications like robots. It shows:
 // - Advanced PID features for motor control
 // - Integral sum limiting to prevent motor saturation
 // - Stability threshold to reduce overshoot
@@ -83,7 +83,7 @@ func main() {
 	fmt.Println("===========================")
 	fmt.Println()
 
-	// Create motor controller with advanced features for FTC-style motor control
+	// Create motor controller with advanced features for motor control
 	controller := pid.New(0.8, 0.1, 0.02,
 		pid.WithIntegralSumMax(1.0/0.1), // Ensure Ki * integralMax ≤ 1.0 for motor limits
 		pid.WithStabilityThreshold(50),  // Disable integral during rapid speed changes

@@ -50,7 +50,6 @@
   - State calculation at any time point
   - Profile completion detection
   - Timing utilities (TotalTime, TimeLeftUntil)
-  - WPILib algorithm compatibility
   - Performance optimization (~50ns per calculation)
 
 ### InterpLUT Package
@@ -66,7 +65,6 @@
   - Performance benchmarks (~36ns per lookup)
   - Profile completion detection
   - Timing utilities (TotalTime, TimeLeftUntil)
-  - WPILib algorithm compatibility
   - Performance optimization (~50ns per calculation)
 
 ### Test Files Created

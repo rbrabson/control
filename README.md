@@ -77,7 +77,6 @@ Trapezoidal motion profile generation for smooth trajectory planning:
 - Trapezoidal and triangle motion profiles
 - Bidirectional motion support (forward/backward)
 - Real-time state calculation (~50ns per calculation)
-- WPILib-compatible implementation
 - Constraint validation and error handling
 - Complete trajectory information (position, velocity, acceleration)
 
@@ -88,7 +87,6 @@ Interpolating lookup tables with cubic Hermite spline interpolation:
 - Smooth interpolation between control points using cubic splines
 - Monotonicity preservation for stable control behavior
 - High-performance lookups (~36ns per interpolation)
-- FTCLib/WPILib compatible algorithm implementation
 - Automatic sorting and error handling
 - Perfect for robotics sensor calibration and non-linear mappings
 
