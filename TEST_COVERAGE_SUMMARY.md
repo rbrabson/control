@@ -34,7 +34,7 @@
 - **Features Tested**:
   - Constructor with and without options
   - WithGravityGain and WithCosineGain options
-  - All controller types (Basic, Gravity, Cosine, Combined, NoFeedforward)
+  - All controller types (Basic, Gravity, Cosine, Combined)
   - Calculate method accuracy across all compensation types
   - Edge cases (zero values, negative values, boundary conditions)
   - Performance benchmarks for all controller variants
@@ -80,7 +80,7 @@
 - **WithCosineGain**: 5 scenarios testing cosine compensation  
 - **Calculate methods**: 8 scenarios across all controller types
 - **Constructor integration**: 4 scenarios testing realistic configurations
-- **NoFeedforward**: 5 scenarios for null-object pattern
+
 - **Benchmarks**: 7 performance tests for all controller variants
 
 ### Performance Results

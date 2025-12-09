@@ -76,7 +76,7 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Cosine Compensation**: Variable torque compensation for rotating systems (`kCos*cos(θ)`)
 - **Combined Compensation**: Multiple compensation strategies simultaneously
 - **Ultra-High Performance**: 2-5 nanoseconds per calculation, zero allocations
-- **Multiple Controller Types**: Basic, Gravity, Cosine, Combined, and NoFeedforward
+- **Multiple Controller Types**: Basic, Gravity, Cosine, and Combined
 
 ### Integration Capabilities
 
@@ -137,7 +137,7 @@ This project implements a comprehensive control systems library in Go featuring 
 ### Feedforward Package Tests (100.0% coverage)
 
 - Constructor tests with and without options
-- All controller type validation (Basic, Gravity, Cosine, Combined, NoFeedforward)
+- All controller type validation (Basic, Gravity, Cosine, Combined)
 - Options pattern functionality testing
 - Calculation accuracy across all compensation types
 - Edge case handling (zero values, negative values, boundary conditions)
