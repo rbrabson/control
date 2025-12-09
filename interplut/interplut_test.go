@@ -89,7 +89,7 @@ func TestCreateLUT_DuplicateX(t *testing.T) {
 		t.Fatal("Expected error for duplicate X values")
 	}
 
-	expected := "strictly increasing X values"
+	expected := "duplicate X values"
 	if !contains(err.Error(), expected) {
 		t.Errorf("Error = %q, want to contain %q", err.Error(), expected)
 	}

@@ -66,10 +66,20 @@ func (lut *InterpLUT) CreateLUT() error {
 		y[i] = p.y
 	}
 
-	// Check for strictly increasing X values
+	// Ensure strictly increasing X values
+	sort.Slice(x, func(i, j int) bool {
+		// Check for sorting
+		cond := x[i] < x[j]
+		if cond {
+			y[i], y[j] = y[j], y[i]
+		}
+		return cond
+	})
+
+	// Check for strictly increasing X values (can I sort this?)
 	for i := 0; i < n-1; i++ {
-		if x[i+1] <= x[i] {
-			return fmt.Errorf("the control points must all have strictly increasing X values")
+		if x[i] == x[i+1] {
+			return fmt.Errorf("the control points have duplicate X values")
 		}
 	}
 
