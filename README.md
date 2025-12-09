@@ -26,7 +26,7 @@ A comprehensive control systems library in Go featuring PID controllers, feedbac
 
 - **PID Controllers**: ~64ns per update - Excellent performance for real-time applications
 - **Feedforward Controllers**: ~2-5ns per calculation - Ultra-fast predictive control
-- **Feedback Controllers**: Scales with system dimension, optimized for multi-variable systems
+- **Feedback Controllers**: ~3-220ns depending on dimension, optimized for multi-variable systems
 - **Comprehensive test coverage** with extensive test suites
 - **Thread-safe design** for concurrent applications
 - **Robust error handling** for edge cases and invalid inputs
@@ -52,12 +52,12 @@ High-performance PID controller implementation with advanced features:
 
 ### Feedback Package (`control/feedback`)
 
-Flexible feedback control interfaces and implementations:
+Full-state feedback control implementation:
 
-- Full-state feedback control for multi-dimensional systems
+- Multi-dimensional state feedback control
 - Vector-based control calculations
 - Error handling for dimension mismatches
-- High-performance implementations
+- High-performance implementation
 
 ### Feedforward Package (`control/feedforward`)
 
@@ -70,9 +70,7 @@ Predictive feedforward controllers with advanced compensation:
 - Options pattern for flexible configuration
 - Ultra-fast calculations (2-5 ns/op)
 
-- **Feedback Interface**: Common interface for all feedback controllers
-- **FullStateFeedback**: Multi-dimensional state feedback controller
-- **NoFeedback**: Null controller for open-loop operation
+- **FullStateFeedback**: Multi-dimensional state feedback control
 
 ## Quick Start
 
@@ -121,7 +119,7 @@ import (
 func main() {
     // Full state feedback for [position, velocity] control
     gains := feedback.Values{1.5, 0.3}
-    controller := feedback.NewFullStateFeedback(gains)
+    controller := feedback.New(gains)
     
     // Control loop
     setpoint := feedback.Values{10.0, 0.0}  // Target position=10, velocity=0
@@ -297,16 +295,6 @@ controller.GetDerivativeFilter() float64
 
 ## Feedback Package API
 
-### Feedback Interface
-
-```go
-type Feedback interface {
-    Calculate(setpoint, measurement float64) float64
-}
-```
-
-The base interface that all feedback controllers implement.
-
 ### FullStateFeedback
 
 Full state feedback controller for multi-dimensional control systems.
@@ -314,7 +302,7 @@ Full state feedback controller for multi-dimensional control systems.
 #### FullStateFeedback Constructor
 
 ```go
-func NewFullStateFeedback(gain Values) *FullStateFeedback
+func New(gain Values) *FullStateFeedback
 ```
 
 Creates a new full state feedback controller with specified gain vector.
@@ -348,7 +336,7 @@ import "control/feedback"
 
 // Create gains for [position, velocity] state feedback
 gains := feedback.Values{2.0, 0.5}
-controller := feedback.NewFullStateFeedback(gains)
+controller := feedback.New(gains)
 
 // Control calculation
 setpoint := feedback.Values{10.0, 0.0}  // Target: position=10, velocity=0
@@ -357,15 +345,6 @@ output, err := controller.Calculate(setpoint, current)
 if err != nil {
     // Handle error (e.g., mismatched vector lengths)
 }
-```
-
-### NoFeedback
-
-Null feedback controller that returns zero output (open-loop operation).
-
-```go
-nf := &feedback.NoFeedback{}
-output := nf.Calculate(setpoint, measurement) // Always returns 0.0
 ```
 
 ### Types

@@ -11,21 +11,8 @@ func main() {
 	fmt.Println("=== Feedback Control Examples ===")
 	fmt.Println()
 
-	// Example 1: NoFeedback Controller
-	fmt.Println("1. NoFeedback Controller:")
-	fmt.Println("   Always returns zero, useful for open-loop control or as a placeholder")
-
-	noFeedback := &feedback.NoFeedback{}
-	output1 := noFeedback.Calculate(10.0, 8.5)
-	output2 := noFeedback.Calculate(-5.0, 3.2)
-
-	fmt.Printf("   NoFeedback.Calculate(10.0, 8.5) = %.2f\n", output1)
-	fmt.Printf("   NoFeedback.Calculate(-5.0, 3.2) = %.2f\n", output2)
-	fmt.Println("   (Always returns 0.0 regardless of input)")
-	fmt.Println()
-
-	// Example 2: Single State Feedback Controller
-	fmt.Println("2. Single State Feedback (Position Control):")
+	// Example 1: Single State Feedback Controller
+	fmt.Println("1. Single State Feedback (Position Control):")
 	fmt.Println("   Simple proportional feedback for position control")
 
 	positionGain := feedback.Values{2.5} // Proportional gain for position
@@ -44,8 +31,8 @@ func main() {
 	}
 	fmt.Println()
 
-	// Example 3: Two State Feedback Controller (Position + Velocity)
-	fmt.Println("3. Two State Feedback (Position + Velocity Control):")
+	// Example 2: Two State Feedback Controller (Position + Velocity)
+	fmt.Println("2. Two State Feedback (Position + Velocity Control):")
 	fmt.Println("   Feedback on both position and velocity for better stability")
 
 	// Gains for [position, velocity]
@@ -70,8 +57,8 @@ func main() {
 	}
 	fmt.Println()
 
-	// Example 4: Three State Feedback Controller (Position + Velocity + Acceleration)
-	fmt.Println("4. Three State Feedback (PVA Control):")
+	// Example 3: Three State Feedback Controller (Position + Velocity + Acceleration)
+	fmt.Println("3. Three State Feedback (PVA Control):")
 	fmt.Println("   Full state feedback for position, velocity, and acceleration")
 
 	// Gains for [position, velocity, acceleration]
@@ -101,26 +88,31 @@ func main() {
 	}
 	fmt.Println()
 
-	// Example 5: NoFeedback vs FullStateFeedback Comparison
-	fmt.Println("5. Controller Comparison:")
-	fmt.Println("   Comparing NoFeedback and FullStateFeedback outputs")
+	// Example 4: Error Handlingracteristics
+	fmt.Println("4. Controller Characteristics:")
+	fmt.Println("   Demonstrating different gain effects on control output")
 
-	noFeedbackCtrl := &feedback.NoFeedback{}
-	fullStateCtrl := feedback.New(feedback.Values{1.5})
+	// Test with different gain values
+	testSetpoint := feedback.Values{10.0, 0.0}
+	testMeasurement := feedback.Values{7.0, 1.5}
 
-	setpoint := 10.0
-	measurement := 7.0
+	// Low gains - gentle response
+	lowGainCtrl := feedback.New(feedback.Values{0.5, 0.1})
+	lowOutput, _ := lowGainCtrl.Calculate(testSetpoint, testMeasurement)
 
-	noOutput := noFeedbackCtrl.Calculate(setpoint, measurement)
-	fullOutput, _ := fullStateCtrl.Calculate(feedback.Values{setpoint}, feedback.Values{measurement})
+	// High gains - aggressive response
+	highGainCtrl := feedback.New(feedback.Values{3.0, 1.0})
+	highOutput, _ := highGainCtrl.Calculate(testSetpoint, testMeasurement)
 
-	fmt.Printf("   Setpoint: %.1f, Measurement: %.1f\n", setpoint, measurement)
-	fmt.Printf("   NoFeedback output: %.2f\n", noOutput)
-	fmt.Printf("   FullStateFeedback output: %.2f\n", fullOutput)
+	fmt.Printf("   Test condition: Setpoint=[%.1f, %.1f], Measurement=[%.1f, %.1f]\n",
+		testSetpoint[0], testSetpoint[1], testMeasurement[0], testMeasurement[1])
+	fmt.Printf("   Low gain [0.5, 0.1]:  Output = %.2f\n", lowOutput)
+	fmt.Printf("   High gain [3.0, 1.0]: Output = %.2f\n", highOutput)
+	fmt.Println("   Higher gains result in more aggressive control responses")
 	fmt.Println()
 
-	// Example 6: Error Handling
-	fmt.Println("6. Error Handling:")
+	// Example 5: Error Handling
+	fmt.Println("4. Error Handling:")
 	fmt.Println("   Demonstrating error conditions with mismatched vector lengths")
 
 	controller := feedback.New(feedback.Values{1.0, 0.5})
@@ -138,8 +130,8 @@ func main() {
 	fmt.Printf("   Invalid input: Output=%.2f, Error=%v\n", output, err)
 	fmt.Println()
 
-	// Example 7: Motion Profile Integration
-	fmt.Println("7. Motion Profile Integration Example:")
+	// Example 5: Motion Profile Integration
+	fmt.Println("5. Motion Profile Integration Example:")
 	fmt.Println("   Simulating a simple trajectory following scenario")
 
 	// Controller gains for [position, velocity]

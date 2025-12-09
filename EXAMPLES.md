@@ -181,7 +181,6 @@ Max Overshoot: 1.2°, Settling Time: 0.45s
 
 **Key Features**:
 
-- NoFeedback controller demonstration (always returns 0)
 - Single-state feedback for position control
 - Multi-state feedback for position/velocity control
 - 3D system control (position/velocity/acceleration)
