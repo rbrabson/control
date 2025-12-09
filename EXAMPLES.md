@@ -549,7 +549,7 @@ func CombinedControl(setpoint, current, velocity, acceleration, position float64
 
 **Sample Output**:
 
-```
+``` bash
 Distance (m) | Velocity (%)
 -------------|-------------
     1.5     |    0.272
@@ -579,7 +579,7 @@ Distance (m) | Velocity (%)
 
 **Sample Output**:
 
-```
+``` bash
 Temperature (°C) | Power (%) | Notes
 -----------------|-----------|--------
       60.0       |   0.208   | Hot water
