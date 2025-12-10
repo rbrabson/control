@@ -76,7 +76,7 @@ func (lut *InterpLUT) CreateLUT() error {
 		return cond
 	})
 
-	// Check for strictly increasing X values (can I sort this?)
+	// Check for duplicate X values
 	for i := 0; i < n-1; i++ {
 		if x[i] == x[i+1] {
 			return fmt.Errorf("the control points have duplicate X values")
