@@ -37,13 +37,12 @@ type PID struct {
 // New creates a new PID controller with the specified gains and optional configurations
 func New(kp, ki, kd float64, opts ...Option) *PID {
 	pid := &PID{
-		kp:                     kp,
-		ki:                     ki,
-		kd:                     kd,
-		outputMin:              -math.Inf(1),
-		outputMax:              math.Inf(1),
-		previousFilterEstimate: 0,
-		initialized:            false,
+		kp:          kp,
+		ki:          ki,
+		kd:          kd,
+		outputMin:   -math.Inf(1),
+		outputMax:   math.Inf(1),
+		initialized: false,
 		// Set default values for optional features (disabled by default)
 		integralResetOnZeroCross: false,
 		stabilityThreshold:       math.NaN(), // No stability threshold by default
@@ -136,34 +135,33 @@ func WithDampening(ka, kv, po float64) Option {
 // Calculate computes the PID output for the given reference (setpoint) and current state (measurement)
 func (p *PID) Calculate(reference, state float64) float64 {
 	now := time.Now()
-	error := p.calculateError(reference, state)
+	error := reference - state
 
 	// Initialize on first call
 	if !p.initialized {
+		p.integral = 0
 		p.lastReference = reference
 		p.lastError = error
+		p.previousFilterEstimate = 0
 		p.prevTime = now
 		p.initialized = true
+
 		return 0
 	}
 
+	// Reset integral on setpoint change to prevent windup
 	if reference != p.lastReference {
-		// Reset integral on setpoint change to prevent windup
 		p.integral = 0
 		p.lastReference = reference
 	}
 
 	// Calculate time delta
 	dt := now.Sub(p.prevTime).Seconds()
-	if dt <= 0 {
-		proportional := p.calculateProportional(error)
-		return p.clamp(proportional)
-	}
 
 	// Calculate PID terms
 	proportional := p.calculateProportional(error)
 	derivative := p.calcualteDerrivative(error, dt)
-	integral := p.calcualteIntegral(error, dt)
+	integral := p.calculateIntegral(error, dt)
 
 	// Calculate output
 	output := proportional + integral + derivative + p.feedForward
@@ -183,27 +181,18 @@ func (p *PID) Calculate(reference, state float64) float64 {
 	return clampedOutput
 }
 
-// calculateError computes the error between the reference and current state
-func (p *PID) calculateError(reference, state float64) float64 {
-	return reference - state
-}
-
 // calculateProportional computes the proportional term for a given error
 func (p *PID) calculateProportional(error float64) float64 {
 	proportional := p.kp * error
 	return proportional
 }
 
-// calcualteDerrivative computes the derivative term for a given error and time delta
-func (p *PID) calcualteDerrivative(error, dt float64) float64 {
-	rawDerivative := p.calculateRawDerivative(error, dt)
-	derivative := p.kd * rawDerivative
+// calculateIntegral computes the integral term for a given error and time delta
+func (p *PID) calculateIntegral(error, dt float64) float64 {
+	if dt <= 0 {
+		return 0
+	}
 
-	return derivative
-}
-
-// calcualteIntegral computes the integral term for a given error and time delta
-func (p *PID) calcualteIntegral(error, dt float64) float64 {
 	// Check for zero crossover and reset integral if enabled
 	if p.integralResetOnZeroCross && ((p.lastError > 0 && error < 0) || (p.lastError < 0 && error > 0)) {
 		p.integral = 0
@@ -229,6 +218,18 @@ func (p *PID) calcualteIntegral(error, dt float64) float64 {
 		integral = p.ki * p.integral // Don't accumulate integral when above stability threshold
 	}
 	return integral
+}
+
+// calcualteDerrivative computes the derivative term for a given error and time delta
+func (p *PID) calcualteDerrivative(error, dt float64) float64 {
+	if dt <= 0 {
+		return 0
+	}
+
+	rawDerivative := p.calculateRawDerivative(error, dt)
+	derivative := p.kd * rawDerivative
+
+	return derivative
 }
 
 // calculateRawDerivative computes the raw derivative term for a given error and time delta
@@ -268,10 +269,9 @@ func (p *PID) GetGains() (kp, ki, kd float64) {
 	return p.kp, p.ki, p.kd
 }
 
-// Reset clears the internal state of the PID controller
+// Reset the initialized state of the PID controller. When the PID output is calculated
+// the next time, the internal state will be reset as well.
 func (p *PID) Reset() {
-	p.integral = 0
-	p.lastError = 0
 	p.initialized = false
 }
 
