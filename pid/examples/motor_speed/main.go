@@ -16,7 +16,6 @@ import (
 	"math/rand"
 	"time"
 
-	"control/filter"
 	"control/pid"
 )
 
@@ -85,14 +84,10 @@ func main() {
 	fmt.Println()
 
 	// Create motor controller with advanced features for motor control
-	filter, err := filter.NewLowPassFilter(0.1)
-	if err != nil {
-		panic(err)
-	}
 	controller := pid.New(0.8, 0.1, 0.02,
 		pid.WithIntegralSumMax(1.0/0.1), // Ensure Ki * integralMax ≤ 1.0 for motor limits
 		pid.WithStabilityThreshold(50),  // Disable integral during rapid speed changes
-		pid.WithFilter(filter),          // Filter encoder noise (10% filter)
+		pid.WithLowPassFilter(0.1),      // Filter encoder noise (10% filter)
 	)
 
 	// Set motor power limits (-1.0 to 1.0)

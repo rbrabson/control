@@ -83,7 +83,7 @@ This project implements a comprehensive control systems library in Go featuring 
 - **Integral Reset on Zero Crossover**: Prevents windup and overshoot
 - **Stability Threshold**: Automatic integral reset for large errors
 - **Integral Sum Capping**: Prevents excessive integral accumulation
-- **Derivative Filtering**: Low-pass filter for noisy derivative signals
+- **Filter Interface**: Pluggable filter.Filter interface supporting LowPassFilter and KalmanFilter
 - **Runtime Configuration**: Change all parameters during operation
 
 ### Feedback Control System (`feedback/`)
@@ -329,11 +329,14 @@ for {
 ### Advanced PID Usage
 
 ```go
+// Create a low-pass filter
+filter, _ := filter.NewLowPassFilter(0.2)
+
 // Controller with advanced features
 controller := pid.New(1.0, 0.2, 0.05,
     pid.WithFeedForward(0.1),           // Predictive control
     pid.WithIntegralResetOnZeroCross(), // Prevent overshoot
-    pid.WithDerivativeFilter(0.2),      // Noise filtering
+    pid.WithFilter(filter),             // Filter interface for noise reduction
     pid.WithStabilityThreshold(5.0),    // Auto integral reset
     pid.WithIntegralSumMax(100.0),      // Prevent windup
     pid.WithOutputLimits(-10.0, 10.0),  // Output limiting

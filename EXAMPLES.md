@@ -185,7 +185,7 @@ Max Overshoot: 1.2°, Settling Time: 0.45s
 
 **Key Features**:
 
-- Derivative filtering for measurement noise reduction
+- Advanced filter.Filter interface implementation with LowPassFilter
 - Stability threshold for integral windup prevention
 - Comparative analysis of Basic, Filtered, and Damped PID controllers
 - Realistic noise simulation and system response modeling
@@ -193,7 +193,7 @@ Max Overshoot: 1.2°, Settling Time: 0.45s
 
 **What You'll Learn**:
 
-- When and how to use derivative filtering (α parameter: 0.0-1.0)
+- How to use the filter.Filter interface with LowPassFilter (gain parameter: 0.0-1.0)
 - Stability threshold configuration for dynamic systems
 - Noise rejection techniques in control systems
 - Performance impact analysis of dampening features

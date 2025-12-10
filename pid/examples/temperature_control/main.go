@@ -15,7 +15,6 @@ import (
 	"math/rand"
 	"time"
 
-	"control/filter"
 	"control/pid"
 )
 
@@ -104,14 +103,10 @@ func main() {
 	feedForwardGain := 0.02 // Rough estimate of power needed per degree above ambient
 
 	// Create temperature controller with advanced features
-	filter, err := filter.NewLowPassFilter(0.2)
-	if err != nil {
-		panic(err)
-	}
 	controller := pid.New(0.5, 0.1, 0.02,
 		pid.WithFeedForward(ambientTemp*feedForwardGain), // Ambient compensation
 		pid.WithIntegralResetOnZeroCross(),               // Prevent overshoot when crossing target
-		pid.WithFilter(filter),                           // Filter temperature sensor noise (20% filter)
+		pid.WithLowPassFilter(0.2),                       // Filter temperature sensor noise (20% filter)
 	)
 
 	// Set heater power limits (0% to 100%)

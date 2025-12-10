@@ -1,7 +1,6 @@
 package pid
 
 import (
-	"control/filter"
 	"log/slog"
 	"math"
 	"time"
@@ -24,29 +23,32 @@ type PID struct {
 	integralSumMax           float64 // Maximum absolute value of integral sum
 	outputMin                float64 // Minimum output value
 	outputMax                float64 // Maximum output value
+	alpha                    float64 // Low-pass filter alpha for derivative term
 
 	// Internal state
-	integral    float64       // Accumulated integral term
-	prevError   float64       // Previous error for derivative calculation
-	filter      filter.Filter // Low-pass filter for derivative term
-	prevTime    time.Time     // Previous update time
-	initialized bool          // Flag to track first update
+	integral               float64   // Accumulated integral term
+	lastReference          float64   // Previous reference for derivative calculation
+	lastError              float64   // Previous error for derivative calculation
+	prevTime               time.Time // Previous update time
+	previousFilterEstimate float64   // Previous estimate for low-pass filter
+	initialized            bool      // Flag to track first update
 }
 
 // New creates a new PID controller with the specified gains and optional configurations
 func New(kp, ki, kd float64, opts ...Option) *PID {
 	pid := &PID{
-		kp:          kp,
-		ki:          ki,
-		kd:          kd,
-		outputMin:   -math.Inf(1),
-		outputMax:   math.Inf(1),
-		initialized: false,
+		kp:                     kp,
+		ki:                     ki,
+		kd:                     kd,
+		outputMin:              -math.Inf(1),
+		outputMax:              math.Inf(1),
+		previousFilterEstimate: 0,
+		initialized:            false,
 		// Set default values for optional features (disabled by default)
 		integralResetOnZeroCross: false,
-		stabilityThreshold:       0,   // 0 means disabled
-		integralSumMax:           0,   // 0 means no limit
-		filter:                   nil, // No filter by default
+		stabilityThreshold:       math.NaN(), // No stability threshold by default
+		integralSumMax:           math.NaN(), // No integral sum cap by default
+		alpha:                    math.NaN(), // No low-pass filter by default
 	}
 
 	// Apply options
@@ -85,10 +87,10 @@ func WithIntegralSumMax(maxSum float64) Option {
 	}
 }
 
-// WithFilter applies a low-pass or Kalman filter to the derivative term
-func WithFilter(filter filter.Filter) Option {
+// WithLowPassAlpha sets the low-pass filter alpha for the derivative term
+func WithLowPassFilter(alpha float64) Option {
 	return func(p *PID) {
-		p.filter = filter
+		p.alpha = alpha
 	}
 }
 
@@ -138,10 +140,17 @@ func (p *PID) Calculate(reference, state float64) float64 {
 
 	// Initialize on first call
 	if !p.initialized {
-		p.prevError = error
+		p.lastReference = reference
+		p.lastError = error
 		p.prevTime = now
 		p.initialized = true
 		return 0
+	}
+
+	if reference != p.lastReference {
+		// Reset integral on setpoint change to prevent windup
+		p.integral = 0
+		p.lastReference = reference
 	}
 
 	// Calculate time delta
@@ -168,7 +177,7 @@ func (p *PID) Calculate(reference, state float64) float64 {
 	}
 
 	// Store values for next iteration
-	p.prevError = error
+	p.lastError = error
 	p.prevTime = now
 
 	return clampedOutput
@@ -188,32 +197,26 @@ func (p *PID) calculateProportional(error float64) float64 {
 // calcualteDerrivative computes the derivative term for a given error and time delta
 func (p *PID) calcualteDerrivative(error, dt float64) float64 {
 	rawDerivative := p.calculateRawDerivative(error, dt)
+	derivative := p.kd * rawDerivative
 
-	// Apply low-pass filter to derivative if enabled
-	var derivative float64
-	if p.filter != nil {
-		derivative = p.kd * p.filter.Estimate(rawDerivative)
-	} else {
-		derivative = p.kd * rawDerivative
-	}
 	return derivative
 }
 
 // calcualteIntegral computes the integral term for a given error and time delta
 func (p *PID) calcualteIntegral(error, dt float64) float64 {
 	// Check for zero crossover and reset integral if enabled
-	if p.integralResetOnZeroCross && ((p.prevError > 0 && error < 0) || (p.prevError < 0 && error > 0)) {
+	if p.integralResetOnZeroCross && ((p.lastError > 0 && error < 0) || (p.lastError < 0 && error > 0)) {
 		p.integral = 0
 	}
 
 	// Integral term with stability threshold check
 	rawDerivative := p.calculateRawDerivative(error, dt)
 	var integral float64
-	if p.stabilityThreshold == 0 || math.Abs(rawDerivative) <= p.stabilityThreshold {
+	if math.IsNaN(p.stabilityThreshold) || math.Abs(rawDerivative) <= p.stabilityThreshold {
 		p.integral += error * dt
 
 		// Cap integral sum if enabled
-		if p.integralSumMax > 0 {
+		if !math.IsNaN(p.integralSumMax) {
 			if p.integral > p.integralSumMax {
 				p.integral = p.integralSumMax
 			} else if p.integral < -p.integralSumMax {
@@ -230,7 +233,15 @@ func (p *PID) calcualteIntegral(error, dt float64) float64 {
 
 // calculateRawDerivative computes the raw derivative term for a given error and time delta
 func (p *PID) calculateRawDerivative(error, dt float64) float64 {
-	rawDerivative := (error - p.prevError) / dt
+	errorChange := error - p.lastError
+	var currentEstimate float64
+	if !math.IsNaN(p.alpha) {
+		currentEstimate = (p.alpha * p.previousFilterEstimate) + (1-p.alpha)*errorChange
+		p.previousFilterEstimate = currentEstimate
+	} else {
+		currentEstimate = errorChange
+	}
+	rawDerivative := currentEstimate / dt
 	return rawDerivative
 }
 
@@ -260,8 +271,7 @@ func (p *PID) GetGains() (kp, ki, kd float64) {
 // Reset clears the internal state of the PID controller
 func (p *PID) Reset() {
 	p.integral = 0
-	p.prevError = 0
-	p.filter.Reset()
+	p.lastError = 0
 	p.initialized = false
 }
 
@@ -310,14 +320,14 @@ func (p *PID) GetIntegralSumMax() float64 {
 	return p.integralSumMax
 }
 
-// SetDerivativeFilter sets the low-pass filter alpha for the derivative term
-func (p *PID) SetDerivativeFilter(filter filter.Filter) {
-	p.filter = filter
+// SetLowPassFilter sets the low-pass filter alpha for the derivative term
+func (p *PID) SetLowPassFilter(alpha float64) {
+	p.alpha = alpha
 }
 
-// GetDerivativeFilter returns the current derivative filter alpha value
-func (p *PID) GetFilter() filter.Filter {
-	return p.filter
+// GetLowPassFilter returns the current low-pass filter alpha value
+func (p *PID) GetLowPassFilter() float64 {
+	return p.alpha
 }
 
 // SetOutputLimits sets the minimum and maximum output values

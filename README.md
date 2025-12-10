@@ -17,7 +17,7 @@ A comprehensive control systems library in Go featuring PID controllers, feedbac
 - **Integral reset on zero crossover** to prevent wrong-direction movement
 - **Stability threshold** to disable integral calculation during high-speed changes
 - **Integral sum capping** for additional windup protection
-- **Derivative low-pass filtering** with configurable alpha (0.0-1.0) to reduce measurement noise
+- **Filter interface support** with LowPassFilter and KalmanFilter implementations for noise reduction
 - **Combined dampening features** for enhanced stability in noisy environments
 - **Gravity compensation** for vertical motion systems
 - **Cosine compensation** for angular/rotating systems
@@ -49,7 +49,7 @@ High-performance PID controller implementation with advanced features:
 
 - Proportional, Integral, and Derivative control
 - Feed-forward control and anti-windup protection
-- Configurable output limits and derivative filtering
+- Configurable output limits and pluggable filter interface
 - Runtime parameter adjustment
 
 ### Feedback Package (`control/feedback`)
@@ -167,13 +167,16 @@ func main() {
 ### Using Options Pattern
 
 ```go
+// Create a low-pass filter
+filter, _ := filter.NewLowPassFilter(0.1)
+
 // Create PID with advanced features
 controller := pid.New(1.0, 0.1, 0.05,
     pid.WithFeedForward(5.0),                    // Add feed-forward term
     pid.WithIntegralResetOnZeroCross(),          // Reset integral at zero crossing
     pid.WithStabilityThreshold(2.0),             // Disable integral when derivative > 2.0
     pid.WithIntegralSumMax(10.0),                // Cap integral sum at ±10.0
-    pid.WithDerivativeFilter(0.1),               // Apply 10% low-pass filter
+    pid.WithFilter(filter),                      // Apply filter interface for noise reduction
 )
 ```
 
@@ -305,15 +308,18 @@ controller.SetIntegralSumMax(maxSum float64)
 controller.GetIntegralSumMax() float64
 ```
 
-#### Derivative Filtering
+#### Filter Interface
 
 ```go
+// Create filter
+filter, _ := filter.NewLowPassFilter(0.1) // 0-1 gain parameter
+
 // Option function
-pid.WithDerivativeFilter(alpha float64) // 0-1, where 0=no filter, 1=max filter
+pid.WithFilter(filter filter.Filter)
 
 // Runtime methods
-controller.SetDerivativeFilter(alpha float64)
-controller.GetDerivativeFilter() float64
+controller.SetFilter(filter filter.Filter)
+controller.GetFilter() filter.Filter
 ```
 
 ## Feedback Package API

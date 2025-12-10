@@ -15,8 +15,8 @@
   - WithOutputLimits option pattern
   - GetOutputLimits and SetOutputLimits methods
   - Calculate method (updated from Update)
-  - WithDerivativeFilter and WithStabilityThreshold dampening features
-  - Derivative filter effectiveness in noisy conditions
+  - WithFilter and WithStabilityThreshold dampening features
+  - Filter interface effectiveness in noisy conditions (LowPassFilter, KalmanFilter)
   - Stability threshold behavior during rapid changes
   - Combined dampening features integration
   - Edge cases and error conditions
@@ -130,7 +130,7 @@
 
 - **Basic PID functionality**: Controller creation, gain setting, calculation accuracy
 - **Options pattern**: WithOutputLimits and other configuration options
-- **Advanced features**: Integral reset, derivative filtering, stability threshold
+- **Advanced features**: Integral reset, filter interface (LowPassFilter/KalmanFilter), stability threshold
 - **Edge cases**: Zero gains, extreme values, timing scenarios
 - **Performance**: Benchmarks for real-time applications
 
