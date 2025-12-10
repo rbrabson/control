@@ -189,10 +189,6 @@ func (p *PID) calculateProportional(error float64) float64 {
 
 // calculateIntegral computes the integral term for a given error and time delta
 func (p *PID) calculateIntegral(error, dt float64) float64 {
-	if dt <= 0 {
-		return 0
-	}
-
 	// Check for zero crossover and reset integral if enabled
 	if p.integralResetOnZeroCross && ((p.lastError > 0 && error < 0) || (p.lastError < 0 && error > 0)) {
 		p.integral = 0
@@ -200,7 +196,6 @@ func (p *PID) calculateIntegral(error, dt float64) float64 {
 
 	// Integral term with stability threshold check
 	rawDerivative := p.calculateRawDerivative(error, dt)
-	var integral float64
 	if math.IsNaN(p.stabilityThreshold) || math.Abs(rawDerivative) <= p.stabilityThreshold {
 		p.integral += error * dt
 
@@ -212,20 +207,14 @@ func (p *PID) calculateIntegral(error, dt float64) float64 {
 				p.integral = -p.integralSumMax
 			}
 		}
-
-		integral = p.ki * p.integral
-	} else {
-		integral = p.ki * p.integral // Don't accumulate integral when above stability threshold
 	}
+
+	integral := p.ki * p.integral
 	return integral
 }
 
 // calcualteDerrivative computes the derivative term for a given error and time delta
 func (p *PID) calcualteDerrivative(error, dt float64) float64 {
-	if dt <= 0 {
-		return 0
-	}
-
 	rawDerivative := p.calculateRawDerivative(error, dt)
 	derivative := p.kd * rawDerivative
 
@@ -234,6 +223,11 @@ func (p *PID) calcualteDerrivative(error, dt float64) float64 {
 
 // calculateRawDerivative computes the raw derivative term for a given error and time delta
 func (p *PID) calculateRawDerivative(error, dt float64) float64 {
+	if dt <= 0 {
+		return 0
+	}
+
+	// Apply low-pass filter if enabled
 	errorChange := error - p.lastError
 	var currentEstimate float64
 	if !math.IsNaN(p.alpha) {
