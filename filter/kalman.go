@@ -52,6 +52,7 @@ func NewKalmanFilter(q, r float64, n int) (*KalmanFilter, error) {
 		x:         0.0,
 		estimates: NewFloat64Stack(n),
 	}
+	kf.Reset()
 
 	// Initialize stack with zeros
 	for i := 0; i < n; i++ {
@@ -85,6 +86,11 @@ func (kf *KalmanFilter) GetK() float64 {
 // GetP returns the current error covariance estimate.
 func (kf *KalmanFilter) GetP() float64 {
 	return kf.p
+}
+
+// GetGain returns the Kalman gain.
+func (kf *KalmanFilter) GetGain() float64 {
+	return kf.k
 }
 
 // Estimate processes a measurement and returns the optimal state estimate.

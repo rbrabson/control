@@ -15,6 +15,7 @@ import (
 	"math/rand"
 	"time"
 
+	"control/filter"
 	"control/pid"
 )
 
@@ -93,6 +94,18 @@ func (ts *ThermalSystem) SetAmbientTemperature(temp float64) {
 	ts.ambientTemp = temp
 }
 
+func mustCreateFilter(coefficient float64) filter.Filter {
+	filter, err := filter.NewLowPassFilter(coefficient)
+	if err != nil {
+		panic(err)
+	}
+	return filter
+}
+
+func mustGetFilterCoefficient(f filter.Filter) float64 {
+	return f.GetGain()
+}
+
 func main() {
 	fmt.Println("Temperature Control Example")
 	fmt.Println("===========================")
@@ -106,7 +119,7 @@ func main() {
 	controller := pid.New(0.5, 0.1, 0.02,
 		pid.WithFeedForward(ambientTemp*feedForwardGain), // Ambient compensation
 		pid.WithIntegralResetOnZeroCross(),               // Prevent overshoot when crossing target
-		pid.WithDerivativeFilter(0.2),                    // Filter temperature sensor noise (20% filter)
+		pid.WithFilter(mustCreateFilter(0.2)),            // Filter temperature sensor noise (20% filter)
 	)
 
 	// Set heater power limits (0% to 100%)
@@ -188,7 +201,7 @@ func main() {
 	fmt.Printf("Controller gains - Kp: %.1f, Ki: %.1f, Kd: %.3f\n", kp, ki, kd)
 	fmt.Printf("Feed-forward value: %.3f\n", controller.GetFeedForward())
 	fmt.Printf("Integral reset enabled: %t\n", controller.GetIntegralResetOnZeroCross())
-	fmt.Printf("Derivative filter: %.1f\n", controller.GetDerivativeFilter())
+	fmt.Printf("Derivative filter: %.1f\n", mustGetFilterCoefficient(controller.GetFilter()))
 
 	fmt.Println("\nTemperature control demonstrates:")
 	fmt.Println("- Feed-forward compensation for ambient temperature")

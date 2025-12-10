@@ -10,6 +10,7 @@ import (
 	"math"
 	"math/rand"
 
+	"control/filter"
 	"control/pid"
 )
 
@@ -42,13 +43,15 @@ func main() {
 		pid.WithOutputLimits(-50.0, 50.0),
 	)
 
+	f, _ := filter.NewLowPassFilter(0.4)
 	filteredPID := pid.New(2.0, 0.5, 0.8,
-		pid.WithDerivativeFilter(0.4), // Low-pass filter derivative
+		pid.WithFilter(f), // Low-pass filter derivative
 		pid.WithOutputLimits(-50.0, 50.0),
 	)
 
+	f2, _ := filter.NewLowPassFilter(0.4)
 	dampedPID := pid.New(2.0, 0.5, 0.8,
-		pid.WithDerivativeFilter(0.4),   // Filter derivative noise
+		pid.WithFilter(f2),              // Filter derivative noise
 		pid.WithStabilityThreshold(3.0), // Disable integral during instability
 		pid.WithOutputLimits(-50.0, 50.0),
 	)
@@ -107,7 +110,11 @@ func main() {
 	fmt.Println()
 	fmt.Println("Dampening Features Explained:")
 	fmt.Println("============================")
-	fmt.Printf("Derivative Filter (α=%.1f): Applies low-pass filtering to derivative term\n", filteredPID.GetDerivativeFilter())
+	filterMsg := "Derivative Filter: Applies low-pass filtering to derivative term"
+	if filteredPID.GetFilter() != nil {
+		filterMsg = "Derivative Filter (enabled): Applies low-pass filtering to derivative term"
+	}
+	fmt.Println(filterMsg)
 	fmt.Println("  - Reduces impact of high-frequency measurement noise")
 	fmt.Println("  - Smooths control output for more stable system response")
 	fmt.Println("  - Range: 0.0 (no filtering) to 1.0 (maximum filtering)")
