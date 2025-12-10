@@ -85,7 +85,10 @@ func main() {
 	fmt.Println()
 
 	// Create motor controller with advanced features for motor control
-	filter, _ := filter.NewLowPassFilter(0.1)
+	filter, err := filter.NewLowPassFilter(0.1)
+	if err != nil {
+		panic(err)
+	}
 	controller := pid.New(0.8, 0.1, 0.02,
 		pid.WithIntegralSumMax(1.0/0.1), // Ensure Ki * integralMax ≤ 1.0 for motor limits
 		pid.WithStabilityThreshold(50),  // Disable integral during rapid speed changes

@@ -401,7 +401,10 @@ func TestIntegralSumMax(t *testing.T) {
 }
 
 func TestDerivativeFilter(t *testing.T) {
-	filter, _ := filter.NewLowPassFilter(0.5)
+	filter, err := filter.NewLowPassFilter(0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
 	pid := New(0.0, 0.0, 1.0, WithFilter(filter))
 
 	pid.Calculate(0.0, 0.0) // Initialize
@@ -529,7 +532,10 @@ func TestSetterMethods(t *testing.T) {
 		t.Error("SetIntegralSumMax failed")
 	}
 
-	filter, _ := filter.NewLowPassFilter(0.8)
+	filter, err := filter.NewLowPassFilter(0.8)
+	if err != nil {
+		t.Fatal(err)
+	}
 	pid.SetDerivativeFilter(filter)
 	if pid.GetFilter() == nil {
 		t.Error("SetDerivativeFilter failed")

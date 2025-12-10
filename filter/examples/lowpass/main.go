@@ -24,10 +24,19 @@ func main() {
 	fmt.Println("=======================================")
 
 	// Create filters with different gains
-	lowGainFilter, _ := filter.NewLowPassFilter(0.1)   // Fast response, less smoothing
-	medGainFilter, _ := filter.NewLowPassFilter(0.5)   // Balanced
-	highGainFilter, _ := filter.NewLowPassFilter(0.9)  // Slow response, more smoothing
-	
+	lowGainFilter, err := filter.NewLowPassFilter(0.1) // Fast response, less smoothing
+	if err != nil {
+		panic(err)
+	}
+	medGainFilter, err := filter.NewLowPassFilter(0.5) // Balanced
+	if err != nil {
+		panic(err)
+	}
+	highGainFilter, err := filter.NewLowPassFilter(0.9) // Slow response, more smoothing
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("Filter Configuration:")
 	fmt.Printf("  Low Gain (0.1):  Fast response, minimal smoothing\n")
 	fmt.Printf("  Med Gain (0.5):  Balanced response and smoothing\n")
@@ -35,9 +44,9 @@ func main() {
 
 	// Signal parameters
 	amplitude := 10.0
-	frequency := 0.1  // Hz
+	frequency := 0.1 // Hz
 	noiseLevel := 3.0
-	timeStep := 0.1   // seconds
+	timeStep := 0.1 // seconds
 	numSamples := 50
 
 	fmt.Println("Time\tNoisy\tLow(0.1)\tMed(0.5)\tHigh(0.9)")
@@ -47,29 +56,29 @@ func main() {
 
 	for i := 0; i < numSamples; i++ {
 		t := float64(i) * timeStep
-		
+
 		// Generate clean signal (for error calculation)
 		cleanSignal := amplitude * math.Sin(2*math.Pi*frequency*t)
-		
+
 		// Generate noisy measurement
 		noisySignal := generateNoisySignal(t, amplitude, frequency, noiseLevel)
-		
+
 		// Apply filters
 		lowFiltered := lowGainFilter.Estimate(noisySignal)
 		medFiltered := medGainFilter.Estimate(noisySignal)
 		highFiltered := highGainFilter.Estimate(noisySignal)
-		
+
 		// Calculate errors compared to clean signal
 		noiseError := math.Abs(noisySignal - cleanSignal)
 		lowError := math.Abs(lowFiltered - cleanSignal)
 		medError := math.Abs(medFiltered - cleanSignal)
 		highError := math.Abs(highFiltered - cleanSignal)
-		
+
 		totalNoise += noiseError
 		totalLowError += lowError
 		totalMedError += medError
 		totalHighError += highError
-		
+
 		// Print every 5 samples
 		if i%5 == 0 || i == numSamples-1 {
 			fmt.Printf("%.1f\t%.2f\t%.2f\t\t%.2f\t\t%.2f\n",
@@ -88,11 +97,11 @@ func main() {
 
 	fmt.Printf("Average Errors (vs clean signal):\n")
 	fmt.Printf("  Raw Noisy:     %.3f\n", avgNoise)
-	fmt.Printf("  Low Gain:      %.3f (%.1f%% improvement)\n", 
+	fmt.Printf("  Low Gain:      %.3f (%.1f%% improvement)\n",
 		avgLowError, (avgNoise-avgLowError)/avgNoise*100)
-	fmt.Printf("  Medium Gain:   %.3f (%.1f%% improvement)\n", 
+	fmt.Printf("  Medium Gain:   %.3f (%.1f%% improvement)\n",
 		avgMedError, (avgNoise-avgMedError)/avgNoise*100)
-	fmt.Printf("  High Gain:     %.3f (%.1f%% improvement)\n", 
+	fmt.Printf("  High Gain:     %.3f (%.1f%% improvement)\n",
 		avgHighError, (avgNoise-avgHighError)/avgNoise*100)
 
 	fmt.Println()
@@ -117,9 +126,9 @@ func main() {
 		lowResp := lowGainFilter.Estimate(10.0)
 		medResp := medGainFilter.Estimate(10.0)
 		highResp := highGainFilter.Estimate(10.0)
-		
+
 		fmt.Printf("%d\t%.3f\t\t%.3f\t\t%.3f\n", step, lowResp, medResp, highResp)
-		
+
 		// Stop when all are close to final value
 		if step >= 5 && lowResp > 9.9 && medResp > 9.9 && highResp > 9.5 {
 			break
@@ -140,13 +149,13 @@ func main() {
 	fmt.Println("  - Fast-changing signals")
 	fmt.Println("  - Real-time control systems requiring quick response")
 	fmt.Println("  - When signal already has low noise")
-	
+
 	fmt.Println()
 	fmt.Println("• Use MEDIUM gain (0.4-0.6) for:")
 	fmt.Println("  - General-purpose filtering")
 	fmt.Println("  - Balanced noise rejection and response speed")
 	fmt.Println("  - Most sensor filtering applications")
-	
+
 	fmt.Println()
 	fmt.Println("• Use HIGH gain (0.7-0.9) for:")
 	fmt.Println("  - Very noisy signals")

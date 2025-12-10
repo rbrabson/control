@@ -43,13 +43,19 @@ func main() {
 		pid.WithOutputLimits(-50.0, 50.0),
 	)
 
-	f, _ := filter.NewLowPassFilter(0.4)
+	f, err := filter.NewLowPassFilter(0.4)
+	if err != nil {
+		panic(err)
+	}
 	filteredPID := pid.New(2.0, 0.5, 0.8,
 		pid.WithFilter(f), // Low-pass filter derivative
 		pid.WithOutputLimits(-50.0, 50.0),
 	)
 
-	f2, _ := filter.NewLowPassFilter(0.4)
+	f2, err := filter.NewLowPassFilter(0.4)
+	if err != nil {
+		panic(err)
+	}
 	dampedPID := pid.New(2.0, 0.5, 0.8,
 		pid.WithFilter(f2),              // Filter derivative noise
 		pid.WithStabilityThreshold(3.0), // Disable integral during instability
