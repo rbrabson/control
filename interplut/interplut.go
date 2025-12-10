@@ -130,7 +130,7 @@ func (lut *InterpLUT) CreateLUT() error {
 func (lut *InterpLUT) Get(input float64) (float64, error) {
 	n := len(lut.x)
 	if n == 0 {
-		return 0, fmt.Errorf("createLUT() must be called before get()")
+		return 0, fmt.Errorf("CreateLUT() must be called before get()")
 	}
 
 	// Handle NaN input
