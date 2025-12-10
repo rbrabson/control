@@ -23,7 +23,7 @@ type PID struct {
 	integralSumMax           float64 // Maximum absolute value of integral sum
 	outputMin                float64 // Minimum output value
 	outputMax                float64 // Maximum output value
-	alpha                    float64 // Low-pass filter alpha for derivative term
+	measurementGain          float64 // Low-pass filter measurement gain for derivative term
 
 	// Internal state
 	integral               float64   // Accumulated integral term
@@ -47,7 +47,7 @@ func New(kp, ki, kd float64, opts ...Option) *PID {
 		integralResetOnZeroCross: false,
 		stabilityThreshold:       math.NaN(), // No stability threshold by default
 		integralSumMax:           math.NaN(), // No integral sum cap by default
-		alpha:                    math.NaN(), // No low-pass filter by default
+		measurementGain:          math.NaN(), // No low-pass filter by default
 	}
 
 	// Apply options
@@ -86,10 +86,12 @@ func WithIntegralSumMax(maxSum float64) Option {
 	}
 }
 
-// WithLowPassAlpha sets the low-pass filter alpha for the derivative term
-func WithLowPassFilter(alpha float64) Option {
+// WithLowPassFilter sets the low-pass filter gain for the derivative term., with the value being (0 < measurementGain < 1).
+// High values of measurementGain are smoother but have more phase lag; low values of measurementGain allow more noise but
+// will respond faster to quick changes in the measured state.
+func WithLowPassFilter(measurementGain float64) Option {
 	return func(p *PID) {
-		p.alpha = alpha
+		p.measurementGain = measurementGain
 	}
 }
 
@@ -230,8 +232,8 @@ func (p *PID) calculateRawDerivative(error, dt float64) float64 {
 	// Apply low-pass filter if enabled
 	errorChange := error - p.lastError
 	var currentEstimate float64
-	if !math.IsNaN(p.alpha) {
-		currentEstimate = (p.alpha * p.previousFilterEstimate) + (1-p.alpha)*errorChange
+	if !math.IsNaN(p.measurementGain) {
+		currentEstimate = (p.measurementGain * p.previousFilterEstimate) + (1-p.measurementGain)*errorChange
 		p.previousFilterEstimate = currentEstimate
 	} else {
 		currentEstimate = errorChange
@@ -316,12 +318,12 @@ func (p *PID) GetIntegralSumMax() float64 {
 
 // SetLowPassFilter sets the low-pass filter alpha for the derivative term
 func (p *PID) SetLowPassFilter(alpha float64) {
-	p.alpha = alpha
+	p.measurementGain = alpha
 }
 
 // GetLowPassFilter returns the current low-pass filter alpha value
 func (p *PID) GetLowPassFilter() float64 {
-	return p.alpha
+	return p.measurementGain
 }
 
 // SetOutputLimits sets the minimum and maximum output values
