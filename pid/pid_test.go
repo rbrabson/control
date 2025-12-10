@@ -1,7 +1,6 @@
 package pid
 
 import (
-	"control/filter"
 	"math"
 	"testing"
 	"time"
@@ -10,15 +9,6 @@ import (
 // Helper function to check if two floats are approximately equal
 func almostEqual(a, b, tolerance float64) bool {
 	return math.Abs(a-b) <= tolerance
-}
-
-// Helper function to create a filter for tests (panics on error for simplicity)
-func mustCreateFilter(gain float64) filter.Filter {
-	f, err := filter.NewLowPassFilter(gain)
-	if err != nil {
-		panic(err)
-	}
-	return f
 }
 
 func TestNew(t *testing.T) {
