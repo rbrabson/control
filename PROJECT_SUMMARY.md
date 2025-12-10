@@ -44,7 +44,8 @@ This project implements a comprehensive control systems library in Go featuring 
 │   ├── motionprofile_test.go    # Comprehensive test suite (100% coverage)
 │   └── examples/                # Motion profile examples
 │       ├── basic/               # Basic trapezoidal profile
-│       └── triangle/            # Triangle profile demonstration
+│       ├── triangle/            # Triangle profile demonstration
+│       └── fullstate_control/   # Motion profiles with feedback control integration
 ├── interplut/
 │   ├── interplut.go             # Interpolating lookup table with cubic splines
 │   ├── interplut_test.go        # Comprehensive test suite (75.4% coverage)
@@ -311,6 +312,27 @@ Complete documentation includes:
 - **Status**: ✅ Working and tested
 
 ## 🔧 Usage Examples
+
+### Motion Profile Usage
+
+```go
+// Create motion profile constraints
+constraints := motionprofile.Constraints{
+    MaxVelocity:     2.0, // m/s
+    MaxAcceleration: 1.0, // m/s²
+}
+
+// Define motion from rest to target
+initial := motionprofile.State{Position: 0.0, Velocity: 0.0}
+goal := motionprofile.State{Position: 5.0, Velocity: 0.0}
+
+// Generate profile and track trajectory
+profile := motionprofile.New(constraints, initial, goal)
+for t := 0.0; t <= profile.TotalTime(); t += 0.01 {
+    state := profile.Calculate(t)
+    // Use state.Position, state.Velocity, state.Acceleration
+}
+```
 
 ### PID Controller Usage
 

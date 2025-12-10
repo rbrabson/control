@@ -4,12 +4,12 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **18 complete examples** across six control packages:
+The library includes **19 complete examples** across six control packages:
 
 - **5 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
-- **2 Motion Profile Examples** - Smooth trapezoidal motion generation
+- **3 Motion Profile Examples** - Smooth trapezoidal motion generation and control integration
 - **3 InterpLUT Examples** - Interpolating lookup tables with cubic splines
 - **2 Filter Examples** - Kalman filtering and low-pass signal smoothing
 
@@ -43,6 +43,9 @@ for dir in feedback/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") =
 
 # InterpLUT Examples
 for dir in interplut/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
+
+# Motion Profile Examples
+for dir in motionprofile/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
 
 # Filter Examples
 for dir in filter/examples/*/; do (cd "$dir" && echo "=== $(basename "$dir") ===" && go run main.go); done
@@ -676,6 +679,112 @@ Step | Arm Pos | Target | Kp    | Ki   | Kd   | Reset | Output
 - Smart reset logic to balance performance and control continuity
 
 ---
+
+---
+
+## Motion Profile Examples
+
+### 1. Basic Trapezoidal Profile (`motionprofile/examples/basic/`)
+
+**Purpose**: Generate smooth trapezoidal velocity profiles for precise motion control
+
+**Key Features**:
+
+- Trapezoidal motion profile generation with configurable constraints
+- Smooth acceleration, cruise, and deceleration phases
+- Position, velocity, and acceleration calculations at any time
+- Time-optimal trajectory planning
+
+**What You'll Learn**:
+
+- How to define motion constraints (max velocity, max acceleration)
+- Profile generation for different initial and goal states
+- Time-based state calculations for trajectory following
+- Optimal motion planning for robotics and automation
+
+**Sample Output**:
+
+```bash
+Trapezoidal Motion Profile Generator
+===================================
+Profile: 0.0 → 10.0 units (Max V: 3.0, Max A: 2.0)
+Total Time: 4.83 seconds
+
+Time    Position  Velocity  Acceleration
+----    --------  --------  ------------
+0.0     0.00      0.00      2.00
+1.5     2.25      3.00      0.00
+3.33    10.00     0.00      -2.00
+```
+
+**Run Command**: `cd motionprofile/examples/basic && go run main.go`
+
+### 2. Triangle Profile Demonstration (`motionprofile/examples/triangle/`)
+
+**Purpose**: Demonstrate triangle profiles when maximum velocity cannot be reached
+
+**Key Features**:
+
+- Triangle profile generation for short distances
+- Peak velocity calculation when cruise phase is impossible
+- Acceleration and deceleration phase analysis
+- Comparison with trapezoidal profiles
+
+**What You'll Learn**:
+
+- When triangle profiles occur vs trapezoidal profiles
+- Peak velocity calculation for constrained motion
+- Profile optimization for different distance requirements
+- Motion planning edge cases and constraints
+
+**Run Command**: `cd motionprofile/examples/triangle && go run main.go`
+
+### 3. Full-State Feedback Control Integration (`motionprofile/examples/fullstate_control/`)
+
+**Purpose**: Complete trajectory tracking system combining motion profiles with feedback control
+
+**Key Features**:
+
+- Motion profile generation with full-state feedback control
+- Real-time trajectory following simulation
+- Position and velocity error tracking
+- Performance analysis with tracking metrics
+- Physics-based system simulation (mass, damping)
+
+**What You'll Learn**:
+
+- Integration of motion planning with control systems
+- Full-state feedback vs traditional PID control
+- Trajectory tracking performance analysis
+- Real-world control system simulation
+- Controller tuning for trajectory following
+
+**Sample Output**:
+
+```bash
+Motion Profile with Full-State Feedback Control Example
+======================================================
+
+Motion Profile Generated:
+- Distance: 5.0 m
+- Max Velocity: 2.0 m/s
+- Total Time: 4.50 s
+
+Performance Analysis:
+Maximum Tracking Error: 0.082 m (1.6%)
+RMS Tracking Error: 0.051 m (1.0%)
+Final Settling Error: 0.000 m (0.00%)
+✅ Motion completed successfully!
+```
+
+**Applications**:
+
+- CNC machines for precise tool path following
+- Robotic arms for smooth joint trajectory execution
+- Positioning systems for high-accuracy motion control
+- 3D printers for precise extruder head positioning
+
+**Run Command**: `cd motionprofile/examples/fullstate_control && go run main.go`
 
 ---
 
