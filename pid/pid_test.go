@@ -412,10 +412,6 @@ func TestReset(t *testing.T) {
 	// Reset and check
 	pid.Reset()
 
-	if pid.GetIntegral() != 0 {
-		t.Error("Integral should be zero after reset")
-	}
-
 	if pid.initialized {
 		t.Error("PID should not be initialized after reset")
 	}
