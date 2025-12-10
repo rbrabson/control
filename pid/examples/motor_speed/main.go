@@ -79,30 +79,17 @@ func (m *Motor) GetActualSpeed() float64 {
 	return m.speed
 }
 
-func mustCreateFilter(coefficient float64) filter.Filter {
-	filter, err := filter.NewLowPassFilter(coefficient)
-	if err != nil {
-		panic(err)
-	}
-	return filter
-}
-
-func mustGetFilterCoefficient(f filter.Filter) float64 {
-	// Since the filter coefficient method is not exported, we can't access it directly.
-	// This function is a workaround to retrieve the coefficient for display purposes.
-	return 0.1 // Return a default value or calculate based on filter type
-}
-
 func main() {
 	fmt.Println("Motor Speed Control Example")
 	fmt.Println("===========================")
 	fmt.Println()
 
 	// Create motor controller with advanced features for motor control
+	filter, _ := filter.NewLowPassFilter(0.1)
 	controller := pid.New(0.8, 0.1, 0.02,
-		pid.WithIntegralSumMax(1.0/0.1),       // Ensure Ki * integralMax ≤ 1.0 for motor limits
-		pid.WithStabilityThreshold(50),        // Disable integral during rapid speed changes
-		pid.WithFilter(mustCreateFilter(0.1)), // Filter encoder noise (10% filter)
+		pid.WithIntegralSumMax(1.0/0.1), // Ensure Ki * integralMax ≤ 1.0 for motor limits
+		pid.WithStabilityThreshold(50),  // Disable integral during rapid speed changes
+		pid.WithFilter(filter),          // Filter encoder noise (10% filter)
 	)
 
 	// Set motor power limits (-1.0 to 1.0)
@@ -160,7 +147,6 @@ func main() {
 	fmt.Printf("Final integral value: %.3f\n", controller.GetIntegral())
 	fmt.Printf("Integral sum max: %.1f\n", controller.GetIntegralSumMax())
 	fmt.Printf("Stability threshold: %.0f\n", controller.GetStabilityThreshold())
-	fmt.Printf("Derivative filter: %.1f\n", mustGetFilterCoefficient(controller.GetFilter()))
 
 	// Demonstrate runtime tuning
 	fmt.Println("\nDemonstrating runtime gain tuning...")
