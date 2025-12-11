@@ -141,8 +141,7 @@ func main() {
 	// Simulation parameters
 	setpoint := 50.0
 	duration := 10.0 // Simulation duration in seconds
-	// dt := 0.01       // Time step in seconds
-	dt := 0.1 // Time step in seconds
+	dt := 0.01       // Time step in seconds
 	iterations := int(duration / dt)
 
 	// System parameters
