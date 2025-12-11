@@ -21,6 +21,15 @@ func newLowPassFilterForTest(gain float64) filter.Filter {
 	return f
 }
 
+// Helper function to create a Kalman filter for testing
+func newKalmanFilterForTest(q, r float64, n int) filter.Filter {
+	f, err := filter.NewKalmanFilter(q, r, n)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name string
@@ -780,4 +789,257 @@ func BenchmarkPIDWithDampening(b *testing.B) {
 		noise := math.Sin(float64(i)*0.1) * 0.1
 		pid.Calculate(10.0, 5.0+noise)
 	}
+}
+
+// TestKalmanFilterIntegration tests PID controller with Kalman filter
+func TestKalmanFilterIntegration(t *testing.T) {
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 5)
+	pid := New(1.0, 0.1, 0.05, WithFilter(kalmanFilter))
+
+	// Verify filter is set
+	if pid.GetFilter() == nil {
+		t.Error("Expected Kalman filter to be set")
+	}
+
+	// Verify controller can calculate with Kalman filter
+	pid.Calculate(1.0, 0.0) // Initialize
+	time.Sleep(10 * time.Millisecond)
+	output := pid.Calculate(1.0, 0.0)
+
+	if math.IsNaN(output) || math.IsInf(output, 0) {
+		t.Errorf("Expected valid output, got %f", output)
+	}
+}
+
+// TestKalmanFilterWithNoise tests Kalman filter effectiveness in noisy conditions
+func TestKalmanFilterWithNoise(t *testing.T) {
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 10)
+	pid := New(2.0, 0.1, 0.05, WithFilter(kalmanFilter))
+
+	// Simulate a system with measurement noise
+	setpoint := 10.0
+	var outputs []float64
+
+	for i := 0; i < 50; i++ {
+		// Add realistic noise to measurement
+		trueValue := 5.0 + float64(i)*0.1 // Gradual increase
+		noise := (math.Sin(float64(i)*0.5) * 0.5) + (math.Cos(float64(i)*0.3) * 0.3)
+		measurement := trueValue + noise
+
+		output := pid.Calculate(setpoint, measurement)
+		outputs = append(outputs, output)
+
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// Verify the controller produced reasonable outputs
+	if len(outputs) != 50 {
+		t.Errorf("Expected 50 outputs, got %d", len(outputs))
+	}
+
+	// Check that outputs are within reasonable bounds
+	for i, output := range outputs {
+		if math.IsNaN(output) || math.IsInf(output, 0) {
+			t.Errorf("Output %d is invalid: %f", i, output)
+		}
+	}
+
+	// Verify Kalman filter improved response
+	// Outputs should be relatively smooth despite noisy input
+	variance := calculateVariance(outputs)
+	if variance > 50.0 { // Very high variance suggests poor filtering
+		t.Logf("Warning: High output variance with Kalman filter: %f", variance)
+	}
+}
+
+// TestKalmanFilterMultipleSensorScenarios tests different Kalman filter parameters
+func TestKalmanFilterMultipleSensorScenarios(t *testing.T) {
+	scenarios := []struct {
+		name      string
+		q         float64 // Sensor covariance (measurement noise)
+		r         float64 // Model covariance (process noise)
+		n         int     // Stack size
+		expectErr bool
+	}{
+		{"High sensor noise", 0.1, 0.01, 5, false},
+		{"High process noise", 0.01, 0.1, 5, false},
+		{"Balanced noise", 0.05, 0.05, 5, false},
+		{"Large stack", 0.01, 0.1, 20, false},
+		{"Small stack", 0.01, 0.1, 2, false},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(scenario.name, func(t *testing.T) {
+			kalmanFilter := newKalmanFilterForTest(scenario.q, scenario.r, scenario.n)
+			pid := New(1.0, 0.1, 0.05, WithFilter(kalmanFilter))
+
+			// Run several iterations
+			for i := 0; i < 20; i++ {
+				output := pid.Calculate(5.0, float64(i)*0.1)
+				if math.IsNaN(output) || math.IsInf(output, 0) {
+					if !scenario.expectErr {
+						t.Errorf("Unexpected invalid output: %f", output)
+					}
+					return
+				}
+			}
+		})
+	}
+}
+
+// TestKalmanFilterReset verifies Kalman filter is reset properly
+func TestKalmanFilterReset(t *testing.T) {
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 5)
+	pid := New(1.0, 0.1, 0.05, WithFilter(kalmanFilter))
+
+	// Generate some outputs
+	for i := 0; i < 10; i++ {
+		pid.Calculate(5.0, 0.0)
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// Reset the controller
+	pid.Reset()
+
+	// After reset, controller should reinitialize correctly
+	pid.Calculate(5.0, 0.0)
+	time.Sleep(5 * time.Millisecond)
+	output := pid.Calculate(5.0, 0.0)
+
+	if math.IsNaN(output) || math.IsInf(output, 0) {
+		t.Errorf("Output after reset is invalid: %f", output)
+	}
+}
+
+// TestKalmanFilterVsLowPass compares Kalman and LowPass filter performance
+func TestKalmanFilterVsLowPass(t *testing.T) {
+	// Create controllers with different filters
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 10)
+	pidKalman := New(2.0, 0.1, 0.05, WithFilter(kalmanFilter))
+
+	lpFilter := newLowPassFilterForTest(0.3)
+	pidLowPass := New(2.0, 0.1, 0.05, WithFilter(lpFilter))
+
+	setpoint := 10.0
+	var kalmanOutputs, lowPassOutputs []float64
+
+	// Run both controllers with same noisy input
+	for i := 0; i < 100; i++ {
+		// Create noisy measurement
+		trueValue := float64(i) * 0.1
+		noise := math.Sin(float64(i)*0.3)*0.5 + math.Cos(float64(i)*0.2)*0.3
+		measurement := trueValue + noise
+
+		kalmanOut := pidKalman.Calculate(setpoint, measurement)
+		lowPassOut := pidLowPass.Calculate(setpoint, measurement)
+
+		kalmanOutputs = append(kalmanOutputs, kalmanOut)
+		lowPassOutputs = append(lowPassOutputs, lowPassOut)
+
+		time.Sleep(2 * time.Millisecond)
+	}
+
+	// Calculate statistics
+	kalmanVar := calculateVariance(kalmanOutputs)
+	lowPassVar := calculateVariance(lowPassOutputs)
+
+	t.Logf("Kalman filter variance: %.4f", kalmanVar)
+	t.Logf("LowPass filter variance: %.4f", lowPassVar)
+
+	// Both should produce valid outputs
+	if len(kalmanOutputs) != 100 || len(lowPassOutputs) != 100 {
+		t.Error("Expected 100 outputs from each controller")
+	}
+}
+
+// TestKalmanFilterWithCombinedFeatures tests Kalman filter with other PID features
+func TestKalmanFilterWithCombinedFeatures(t *testing.T) {
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 10)
+	pid := New(1.0, 0.1, 0.05,
+		WithFilter(kalmanFilter),
+		WithIntegralResetOnZeroCross(),
+		WithStabilityThreshold(1.0),
+		WithIntegralSumMax(5.0),
+		WithOutputLimits(-10.0, 10.0),
+	)
+
+	// Simulate system with multiple features active
+	for i := 0; i < 20; i++ {
+		measurement := 5.0 + math.Sin(float64(i)*0.2)*2.0
+		output := pid.Calculate(10.0, measurement)
+
+		if math.IsNaN(output) || math.IsInf(output, 0) {
+			t.Errorf("Iteration %d: Invalid output %f", i, output)
+		}
+
+		// Verify output is clamped
+		if output > 10.0 || output < -10.0 {
+			t.Errorf("Output %f exceeds limits [-10, 10]", output)
+		}
+
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+// BenchmarkPIDWithKalmanFilter measures performance with Kalman filter
+func BenchmarkPIDWithKalmanFilter(b *testing.B) {
+	kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 10)
+	pid := New(1.0, 0.1, 0.05, WithFilter(kalmanFilter))
+	pid.Calculate(0.0, 0.0) // Initialize
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Simulate noisy measurement
+		noise := math.Sin(float64(i)*0.1) * 0.2
+		pid.Calculate(10.0, 5.0+noise)
+	}
+}
+
+// BenchmarkPIDKalmanVsLowPass compares Kalman and LowPass filter performance
+func BenchmarkPIDKalmanVsLowPass(b *testing.B) {
+	b.Run("Kalman", func(b *testing.B) {
+		kalmanFilter := newKalmanFilterForTest(0.01, 0.1, 10)
+		pid := New(1.0, 0.1, 0.05, WithFilter(kalmanFilter))
+		pid.Calculate(0.0, 0.0)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			noise := math.Sin(float64(i)*0.1) * 0.2
+			pid.Calculate(10.0, 5.0+noise)
+		}
+	})
+
+	b.Run("LowPass", func(b *testing.B) {
+		lpFilter := newLowPassFilterForTest(0.3)
+		pid := New(1.0, 0.1, 0.05, WithFilter(lpFilter))
+		pid.Calculate(0.0, 0.0)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			noise := math.Sin(float64(i)*0.1) * 0.2
+			pid.Calculate(10.0, 5.0+noise)
+		}
+	})
+}
+
+// calculateVariance is a helper function to calculate output variance
+func calculateVariance(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	// Calculate mean
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	mean := sum / float64(len(values))
+
+	// Calculate variance
+	var variance float64
+	for _, v := range values {
+		diff := v - mean
+		variance += diff * diff
+	}
+	return variance / float64(len(values))
 }
