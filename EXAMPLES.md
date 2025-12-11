@@ -4,9 +4,9 @@ This document provides a comprehensive overview of all examples included in the 
 
 ## Overview
 
-The library includes **19 complete examples** across six control packages:
+The library includes **20 complete examples** across six control packages:
 
-- **5 PID Controller Examples** - Classic feedback control with advanced features
+- **6 PID Controller Examples** - Classic feedback control with advanced features
 - **1 Feedback Controller Example** - Multi-dimensional state feedback control  
 - **5 Feedforward Controller Examples** - Predictive control with various compensation strategies
 - **3 Motion Profile Examples** - Smooth trapezoidal motion generation and control integration
@@ -222,9 +222,54 @@ Damped PID Error:   80.0% of target
 
 ---
 
+### 6. Filter Comparison (`pid/examples/filter_comparison/`)
+
+**Purpose**: Comparative analysis of Kalman vs LowPass filters for PID derivative filtering
+
+**Key Features**:
+
+- Side-by-side comparison of filter types (Kalman, LowPass, No Filter)
+- Realistic system simulation with configurable noise
+- Comprehensive performance metrics
+- Statistical analysis of control output smoothness
+- Real-world filter selection guidance
+
+**What You'll Learn**:
+
+- When to use Kalman filter vs LowPass filter
+- Filter effectiveness metrics and trade-offs
+- Computational cost comparison
+- Impact of filtering on control performance
+- How to instrument controllers for performance analysis
+
+**Sample Output**:
+
+``` bash
+Kalman Filter Controller (Kalman Filter)
+----------------------------------------
+Total Absolute Error:    47913.4119
+Maximum Error:           55.0030
+Output Variance:         9988.3100
+
+LowPass Filter Controller (LowPass Filter)
+----------------------------------------
+Total Absolute Error:    49093.5277
+Maximum Error:           56.4447
+Output Variance:         9989.9900
+
+Key Observations:
+• Kalman Filter: Advanced state estimation, adapts to system dynamics
+• LowPass Filter: Simple, computationally efficient, fixed smoothing
+• No Filter: Most responsive but noisiest output
+```
+
+**Run Command**: `cd pid/examples/filter_comparison && go run main.go`
+
+---
+
 ## Feedback Controller Examples
 
-### 6. Full State Feedback Control (`feedback/examples/feedback_control/`)
+### 7. Full State Feedback Control (`feedback/examples/feedback_control/`)
 
 **Purpose**: Multi-dimensional state feedback control for complex systems
 
@@ -262,7 +307,7 @@ Performance: 0.31 ns/op (ultra-fast calculations)
 
 ## Feedforward Controller Examples
 
-### 6. Basic Feedforward Control (`feedforward/examples/basic/`)
+### 8. Basic Feedforward Control (`feedforward/examples/basic/`)
 
 **Purpose**: Simple motor control with velocity and acceleration compensation
 
@@ -297,7 +342,7 @@ Analysis: Reduces steady-state error during motion
 
 ---
 
-### 7. Elevator Control (`feedforward/examples/elevator/`)
+### 9. Elevator Control (`feedforward/examples/elevator/`)
 
 **Purpose**: Elevator system with gravity compensation for vertical movement
 
@@ -333,7 +378,7 @@ Base gravity compensation: 9.81 N
 
 ---
 
-### 8. Robotic Arm Control (`feedforward/examples/arm/`)
+### 10. Robotic Arm Control (`feedforward/examples/arm/`)
 
 **Purpose**: Rotating robotic arm with angle-dependent cosine compensation
 
@@ -370,7 +415,7 @@ Zero torque at vertical (cos(90°) = 0.0)
 
 ---
 
-### 9. Crane Control (`feedforward/examples/crane/`)
+### 11. Crane Control (`feedforward/examples/crane/`)
 
 **Purpose**: Complex crane boom control with combined gravity and cosine compensation
 
@@ -406,7 +451,7 @@ Gravity component: 15.7 units, Max cosine component: 8.2 units
 
 ---
 
-### 10. Controller Comparison (`feedforward/examples/compare/`)
+### 12. Controller Comparison (`feedforward/examples/compare/`)
 
 **Purpose**: Side-by-side comparison of all feedforward controller types
 
@@ -790,7 +835,7 @@ Final Settling Error: 0.000 m (0.00%)
 
 ## Filter Examples
 
-### 1. Kalman Filter Signal Estimation (`filter/examples/basic/`)
+### 19. Kalman Filter Signal Estimation (`filter/examples/basic/`)
 
 **Purpose**: Advanced state estimation with optimal filtering for noisy signals
 
@@ -833,7 +878,7 @@ Average Kalman Error:      2.389
 
 ---
 
-### 2. Low-Pass Filter Signal Smoothing (`filter/examples/lowpass/`)
+### 20. Low-Pass Filter Signal Smoothing (`filter/examples/lowpass/`)
 
 **Purpose**: Simple and effective signal smoothing with configurable response characteristics
 
