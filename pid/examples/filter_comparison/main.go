@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"time"
 
 	"control/filter"
 	"control/pid"
@@ -140,7 +141,8 @@ func main() {
 	// Simulation parameters
 	setpoint := 50.0
 	duration := 10.0 // Simulation duration in seconds
-	dt := 0.01       // Time step in seconds
+	// dt := 0.01       // Time step in seconds
+	dt := 0.1 // Time step in seconds
 	iterations := int(duration / dt)
 
 	// System parameters
@@ -148,10 +150,15 @@ func main() {
 	timeConstant := 1.0
 	noiseMagnitude := 2.0
 
+	// PID parameters
+	kP := 0.5
+	kI := 0.1
+	kD := 0.05
+
 	// Create controllers with different filters
 	// LowPass filter controller
-	lpFilter, _ := filter.NewLowPassFilter(0.3)
-	lpPID := pid.New(0.5, 0.1, 0.05,
+	lpFilter, _ := filter.NewLowPassFilter(0.5)
+	lpPID := pid.New(kP, kI, kD,
 		pid.WithFilter(lpFilter),
 		pid.WithOutputLimits(-100.0, 100.0),
 	)
@@ -159,14 +166,14 @@ func main() {
 
 	// Kalman filter controller (sensor covariance 0.05, model covariance 0.1, 10 states)
 	kfFilter, _ := filter.NewKalmanFilter(0.05, 0.1, 10)
-	kfPID := pid.New(0.5, 0.1, 0.05,
+	kfPID := pid.New(kP, kI, kD,
 		pid.WithFilter(kfFilter),
 		pid.WithOutputLimits(-100.0, 100.0),
 	)
 	kfMetrics := NewControllerMetrics("Kalman Filter Controller", "Kalman")
 
 	// No filter controller for comparison
-	nfPID := pid.New(0.5, 0.1, 0.05,
+	nfPID := pid.New(kP, kI, kD,
 		pid.WithOutputLimits(-100.0, 100.0),
 	)
 	nfMetrics := NewControllerMetrics("No Filter Controller", "None")
@@ -184,24 +191,28 @@ func main() {
 	fmt.Printf("  Noise Magnitude:   %.1f\n\n", noiseMagnitude)
 
 	// Run simulation
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		// Update LowPass filter system
-		lpOutput := lpPID.Calculate(setpoint, lpSystem.GetMeasurement())
+		lpMeasurement := lpSystem.GetMeasurement()
+		lpOutput := lpPID.Calculate(setpoint, lpMeasurement)
 		lpSystem.Update(lpOutput, dt)
 		lpError := setpoint - lpSystem.currentState
-		lpMetrics.UpdateMetrics(lpError, lpOutput, lpSystem.GetMeasurement())
+		lpMetrics.UpdateMetrics(lpError, lpOutput, lpMeasurement)
 
 		// Update Kalman filter system
-		kfOutput := kfPID.Calculate(setpoint, kfSystem.GetMeasurement())
+		kfMeasurement := kfSystem.GetMeasurement()
+		kfOutput := kfPID.Calculate(setpoint, kfMeasurement)
 		kfSystem.Update(kfOutput, dt)
 		kfError := setpoint - kfSystem.currentState
-		kfMetrics.UpdateMetrics(kfError, kfOutput, kfSystem.GetMeasurement())
+		kfMetrics.UpdateMetrics(kfError, kfOutput, kfMeasurement)
 
 		// Update No filter system
-		nfOutput := nfPID.Calculate(setpoint, nfSystem.GetMeasurement())
+		nfMeasurement := nfSystem.GetMeasurement()
+		nfOutput := nfPID.Calculate(setpoint, nfMeasurement)
 		nfSystem.Update(nfOutput, dt)
 		nfError := setpoint - nfSystem.currentState
-		nfMetrics.UpdateMetrics(nfError, nfOutput, nfSystem.GetMeasurement())
+		nfMetrics.UpdateMetrics(nfError, nfOutput, nfMeasurement)
+		time.Sleep(time.Duration(dt * float64(time.Second)))
 	}
 
 	// Print results

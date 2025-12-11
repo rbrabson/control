@@ -144,8 +144,6 @@ func (p *PID) Calculate(reference, state float64) float64 {
 		p.lastError = error
 		p.prevTime = now
 		p.initialized = true
-
-		return 0
 	}
 
 	// Reset integral on setpoint change to prevent windup
@@ -226,12 +224,13 @@ func (p *PID) calculateRawDerivative(error, dt float64) float64 {
 		return 0
 	}
 
-	// Apply low-pass filter if enabled
 	errorChange := error - p.lastError
 	var currentEstimate float64
 	if p.filter != nil {
+		// Apply derivative filter if enabled
 		currentEstimate = p.filter.Estimate(errorChange)
 	} else {
+		// No derivative filter
 		currentEstimate = errorChange
 	}
 	rawDerivative := currentEstimate / dt
