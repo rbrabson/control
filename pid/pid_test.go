@@ -1,6 +1,7 @@
 package pid
 
 import (
+	"control/filter"
 	"math"
 	"testing"
 	"time"
@@ -9,6 +10,15 @@ import (
 // Helper function to check if two floats are approximately equal
 func almostEqual(a, b, tolerance float64) bool {
 	return math.Abs(a-b) <= tolerance
+}
+
+// Helper function to create a low-pass filter for testing
+func newLowPassFilterForTest(gain float64) filter.Filter {
+	f, err := filter.NewLowPassFilter(gain)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 func TestNew(t *testing.T) {
@@ -68,7 +78,7 @@ func TestWithFeedForward(t *testing.T) {
 }
 
 func TestWithIntegralResetOnZeroCross(t *testing.T) {
-	pid := New(0.0, 1.0, 0.0, WithIntegralResetOnZeroCross(), WithLowPassFilter(0.3))
+	pid := New(0.0, 1.0, 0.0, WithIntegralResetOnZeroCross(), WithFilter(newLowPassFilterForTest(0.3)))
 
 	if !pid.GetIntegralResetOnZeroCross() {
 		t.Error("Integral reset on zero cross should be enabled")
@@ -123,22 +133,31 @@ func TestWithIntegralSumMax(t *testing.T) {
 
 func TestWithFilter(t *testing.T) {
 	t.Run("With LowPass filter", func(t *testing.T) {
-		pid := New(1.0, 0.1, 0.05, WithLowPassFilter(0.5))
+		lpFilter, err := filter.NewLowPassFilter(0.5)
+		if err != nil {
+			t.Fatal(err)
+		}
+		pid := New(1.0, 0.1, 0.05, WithFilter(lpFilter))
 
-		if math.IsNaN(pid.GetLowPassFilter()) {
-			t.Error("Expected filter to be set, got NaN")
+		if pid.GetFilter() == nil {
+			t.Error("Expected filter to be set, got nil")
 		}
 
 		// Verify the filter is working by checking it's the same instance
-		if pid.GetLowPassFilter() != 0.5 {
-			t.Errorf("Expected filter gain 0.5, got %f", pid.GetLowPassFilter())
+		if pid.GetFilter() != lpFilter {
+			t.Error("Expected same filter instance")
+		}
+
+		// Check gain through the original filter reference
+		if lpFilter.GetGain() != 0.5 {
+			t.Errorf("Expected filter gain 0.5, got %f", lpFilter.GetGain())
 		}
 	})
 
 	t.Run("With nil filter", func(t *testing.T) {
-		pid := New(1.0, 0.1, 0.05, WithLowPassFilter(math.NaN()))
-		if !math.IsNaN(pid.GetLowPassFilter()) {
-			t.Error("Expected NaN filter gain, got a value")
+		pid := New(1.0, 0.1, 0.05, WithFilter(nil))
+		if pid.GetFilter() != nil {
+			t.Error("Expected nil filter")
 		}
 	})
 }
@@ -293,7 +312,7 @@ func TestFeedForward(t *testing.T) {
 }
 
 func TestIntegralResetOnZeroCross(t *testing.T) {
-	pid := New(0.0, 1.0, 0.0, WithIntegralResetOnZeroCross(), WithLowPassFilter(0.3))
+	pid := New(0.0, 1.0, 0.0, WithIntegralResetOnZeroCross(), WithFilter(newLowPassFilterForTest(0.3)))
 
 	// Build up positive integral
 	pid.Calculate(1.0, 0.0) // Initialize
@@ -382,7 +401,8 @@ func TestIntegralSumMax(t *testing.T) {
 }
 
 func TestDerivativeFilter(t *testing.T) {
-	pid := New(0.0, 0.0, 1.0, WithLowPassFilter(0.5))
+	filter, _ := filter.NewLowPassFilter(0.5)
+	pid := New(0.0, 0.0, 1.0, WithFilter(filter))
 
 	pid.Calculate(0.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
@@ -398,19 +418,21 @@ func TestDerivativeFilter(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	pid := New(1.0, 1.0, 1.0, WithLowPassFilter(0.3))
-
-	// Build up some state
-	pid.Calculate(1.0, 0.0)
+	pid := New(1.0, 1.0, 1.0, WithFilter(newLowPassFilterForTest(0.3)))
+	pid.Calculate(1.0, 0.0) // Initialize
 	time.Sleep(10 * time.Millisecond)
-	pid.Calculate(1.0, 0.0)
+	pid.Calculate(1.0, 0.0) // Accumulate integral
 
 	if pid.GetIntegral() == 0 {
-		t.Error("Integral should not be zero before reset")
+		t.Errorf("Integral should not be zero before reset, got %f", pid.GetIntegral())
 	}
 
 	// Reset and check
 	pid.Reset()
+
+	if pid.GetIntegral() != 0 {
+		t.Error("Integral should be zero after reset")
+	}
 
 	if pid.initialized {
 		t.Error("PID should not be initialized after reset")
@@ -456,7 +478,7 @@ func TestCombinedOptions(t *testing.T) {
 		WithIntegralResetOnZeroCross(),
 		WithStabilityThreshold(1.0),
 		WithIntegralSumMax(5.0),
-		WithLowPassFilter(0.3),
+		WithFilter(newLowPassFilterForTest(0.3)),
 	)
 
 	// Verify all options were applied
@@ -476,7 +498,7 @@ func TestCombinedOptions(t *testing.T) {
 		t.Error("Integral sum max not set correctly")
 	}
 
-	if math.IsNaN(pid.GetLowPassFilter()) {
+	if pid.GetFilter() == nil {
 		t.Error("Derivative filter not set correctly")
 	}
 }
@@ -505,9 +527,10 @@ func TestSetterMethods(t *testing.T) {
 		t.Error("SetIntegralSumMax failed")
 	}
 
-	pid.SetLowPassFilter(0.8)
-	if pid.GetLowPassFilter() != 0.8 {
-		t.Error("SetLowPassFilter failed")
+	filter, _ := filter.NewLowPassFilter(0.8)
+	pid.SetFilter(filter)
+	if pid.GetFilter() == nil {
+		t.Error("SetDerivativeFilter failed")
 	}
 
 	pid.SetOutputLimits(-5.5, 5.5)
@@ -561,7 +584,7 @@ func BenchmarkPIDCalculateWithAllOptions(b *testing.B) {
 		WithIntegralResetOnZeroCross(),
 		WithStabilityThreshold(1.0),
 		WithIntegralSumMax(5.0),
-		WithLowPassFilter(0.3),
+		WithFilter(newLowPassFilterForTest(0.3)),
 	)
 	pid.Calculate(0.0, 0.0) // Initialize
 
@@ -575,7 +598,7 @@ func BenchmarkPIDCalculateWithAllOptions(b *testing.B) {
 func TestDerivativeFilterEffectiveness(t *testing.T) {
 	// Test that derivative filtering reduces output variability
 	baselinePID := New(0.0, 0.0, 1.0) // No filter
-	filteredPID := New(0.0, 0.0, 1.0, WithLowPassFilter(0.5))
+	filteredPID := New(0.0, 0.0, 1.0, WithFilter(newLowPassFilterForTest(0.5)))
 
 	// Simulate noisy measurements
 	measurements := []float64{0.0, 0.1, -0.05, 0.15, -0.1, 0.2, -0.15, 0.05}
@@ -677,7 +700,7 @@ func TestStabilityThresholdBehavior(t *testing.T) {
 // TestCombinedDampeningFeatures tests derivative filter + stability threshold together
 func TestCombinedDampeningFeatures(t *testing.T) {
 	pid := New(1.0, 0.1, 0.2,
-		WithLowPassFilter(0.4),
+		WithFilter(newLowPassFilterForTest(0.4)),
 		WithStabilityThreshold(1.5),
 		WithOutputLimits(-50.0, 50.0),
 	)
@@ -718,7 +741,7 @@ func TestCombinedDampeningFeatures(t *testing.T) {
 	}
 
 	// Verify dampening features are active
-	if math.IsNaN(pid.GetLowPassFilter()) {
+	if pid.GetFilter() == nil {
 		t.Error("Expected filter to be set")
 	}
 	if pid.GetStabilityThreshold() != 1.5 {
@@ -746,7 +769,7 @@ func TestCombinedDampeningFeatures(t *testing.T) {
 // BenchmarkPIDWithDampening measures performance impact of dampening features
 func BenchmarkPIDWithDampening(b *testing.B) {
 	pid := New(1.0, 0.1, 0.05,
-		WithLowPassFilter(0.3),
+		WithFilter(newLowPassFilterForTest(0.3)),
 		WithStabilityThreshold(2.0),
 	)
 	pid.Calculate(0.0, 0.0) // Initialize

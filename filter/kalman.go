@@ -55,7 +55,7 @@ func NewKalmanFilter(q, r float64, n int) (*KalmanFilter, error) {
 	kf.Reset()
 
 	// Initialize stack with zeros
-	for i := 0; i < n; i++ {
+	for range n {
 		kf.estimates.Push(0.0)
 	}
 
@@ -118,7 +118,7 @@ func (kf *KalmanFilter) Estimate(measurement float64) float64 {
 // findK iteratively computes the Kalman gain using the DARE.
 func (kf *KalmanFilter) findK() {
 	// Run 2000 iterations to converge to steady-state solution
-	for i := 0; i < 2000; i++ {
+	for range 2000 {
 		kf.solveDARE()
 	}
 }

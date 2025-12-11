@@ -388,10 +388,11 @@ type Values []float64  // Vector type for multi-dimensional states
 
 ```go
 // Motor speed control for robots
+speedFilter, _ := filter.NewLowPassFilter(0.1)
 speedController := pid.New(0.8, 0.1, 0.02,
     pid.WithIntegralSumMax(1.0/0.1),  // Ensure Ki * integralMax ≤ 1.0 for motor limits
     pid.WithStabilityThreshold(50),    // Reduce overshoot during rapid changes
-    pid.WithDerivativeFilter(0.1),     // Filter encoder noise
+    pid.WithFilter(speedFilter),       // Filter encoder noise
 )
 speedController.SetOutputLimits(-1.0, 1.0) // Motor power limits
 ```
@@ -400,10 +401,11 @@ speedController.SetOutputLimits(-1.0, 1.0) // Motor power limits
 
 ```go
 // Temperature controller with feed-forward for ambient compensation
+tempFilter, _ := filter.NewLowPassFilter(0.2)
 tempController := pid.New(2.0, 0.5, 0.1,
     pid.WithFeedForward(ambientCompensation),
     pid.WithIntegralResetOnZeroCross(),  // Prevent overshoot when crossing target
-    pid.WithDerivativeFilter(0.2),       // Filter temperature sensor noise
+    pid.WithFilter(tempFilter),          // Filter temperature sensor noise
 )
 ```
 
@@ -530,10 +532,11 @@ BenchmarkCalculateWithBoth-10      229596540    5.189 ns/op    0 B/op    0 alloc
 
 ```go
 // Typical motor controller setup
+encoderFilter, _ := filter.NewLowPassFilter(0.1)
 motorPID := pid.New(kp, ki, kd,
     pid.WithIntegralSumMax(1.0/ki),           // Prevent motor saturation
     pid.WithStabilityThreshold(encoderCPR/4), // Disable integral during rapid movement
-    pid.WithDerivativeFilter(0.1),            // Filter encoder noise
+    pid.WithFilter(encoderFilter),            // Filter encoder noise
 )
 motorPID.SetOutputLimits(-1.0, 1.0)
 ```
