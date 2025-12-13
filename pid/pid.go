@@ -248,27 +248,30 @@ func (p *PID) clamp(value float64) float64 {
 	return value
 }
 
-// SetGains updates the PID gains
-func (p *PID) SetGains(kp, ki, kd float64) {
-	p.kp = kp
-	p.ki = ki
-	p.kd = kd
-}
-
-// GetGains returns the current PID gains
-func (p *PID) GetGains() (kp, ki, kd float64) {
-	return p.kp, p.ki, p.kd
-}
-
 // Reset the initialized state of the PID controller. When the PID output is calculated
 // the next time, the internal state will be reset as well.
-func (p *PID) Reset() {
+func (p *PID) Reset() *PID {
 	p.integral = 0
 	p.initialized = false
 	p.lastError = 0
 	if p.filter != nil {
 		p.filter.Reset()
 	}
+	return p
+}
+
+// SetGains updates the PID gains
+func (p *PID) SetGains(kp, ki, kd float64) *PID {
+	p.kp = kp
+	p.ki = ki
+	p.kd = kd
+
+	return p
+}
+
+// GetGains returns the current PID gains
+func (p *PID) GetGains() (kp, ki, kd float64) {
+	return p.kp, p.ki, p.kd
 }
 
 // GetIntegral returns the current integral value
@@ -277,8 +280,9 @@ func (p *PID) GetIntegral() float64 {
 }
 
 // SetFeedForward sets the feed-forward value
-func (p *PID) SetFeedForward(feedForward float64) {
+func (p *PID) SetFeedForward(feedForward float64) *PID {
 	p.feedForward = feedForward
+	return p
 }
 
 // GetFeedForward returns the current feed-forward value
@@ -287,8 +291,9 @@ func (p *PID) GetFeedForward() float64 {
 }
 
 // SetIntegralResetOnZeroCross enables or disables integral reset on zero crossover
-func (p *PID) SetIntegralResetOnZeroCross(enabled bool) {
+func (p *PID) SetIntegralResetOnZeroCross(enabled bool) *PID {
 	p.integralResetOnZeroCross = enabled
+	return p
 }
 
 // GetIntegralResetOnZeroCross returns whether integral reset on zero crossover is enabled
@@ -297,8 +302,9 @@ func (p *PID) GetIntegralResetOnZeroCross() bool {
 }
 
 // SetStabilityThreshold sets the derivative threshold for disabling integral calculation
-func (p *PID) SetStabilityThreshold(threshold float64) {
+func (p *PID) SetStabilityThreshold(threshold float64) *PID {
 	p.stabilityThreshold = math.Abs(threshold)
+	return p
 }
 
 // GetStabilityThreshold returns the current stability threshold
@@ -307,8 +313,9 @@ func (p *PID) GetStabilityThreshold() float64 {
 }
 
 // SetIntegralSumMax sets the maximum absolute value of the integral sum
-func (p *PID) SetIntegralSumMax(maxSum float64) {
+func (p *PID) SetIntegralSumMax(maxSum float64) *PID {
 	p.integralSumMax = math.Abs(maxSum)
+	return p
 }
 
 // GetIntegralSumMax returns the current integral sum maximum
@@ -317,8 +324,9 @@ func (p *PID) GetIntegralSumMax() float64 {
 }
 
 // SetFilter sets a filter for the derivative term. Examples are a low pass filter or a kalman filter.
-func (p *PID) SetFilter(f filter.Filter) {
+func (p *PID) SetFilter(f filter.Filter) *PID {
 	p.filter = f
+	return p
 }
 
 // GetFilter returns the current filter used for the derivative term, or nil if no filter is set.
@@ -327,15 +335,16 @@ func (p *PID) GetFilter() filter.Filter {
 }
 
 // SetOutputLimits sets the minimum and maximum output values
-func (p *PID) SetOutputLimits(min, max float64) {
+func (p *PID) SetOutputLimits(min, max float64) *PID {
 	if min > max {
-		return
+		return p
 	}
 	p.outputMin = min
 	p.outputMax = max
 
 	// Clamp integral to prevent windup
 	p.integral = p.clamp(p.integral)
+	return p
 }
 
 // GetOutputLimits returns the current output limits
