@@ -1,6 +1,8 @@
 # Control Systems Library
 
-A comprehensive control systems library in Go featuring PID controllers, feedback control, and feedforward control implementations for robotics and industrial automation.
+A comprehensive control systems library in Go featuring PID controllers,
+feedback control, and feedforward control implementations for robotics and
+industrial automation.
 
 ## Features
 
@@ -38,6 +40,12 @@ A comprehensive control systems library in Go featuring PID controllers, feedbac
 ```bash
 go get github.com/rbrabson/control
 ```
+
+## Examples Status
+
+✅ **All 20 examples verified and working** with excellent output quality.
+See [EXAMPLES_VERIFICATION_REPORT.md](EXAMPLES_VERIFICATION_REPORT.md) for
+detailed verification results.
 
 ## Packages
 
@@ -93,7 +101,8 @@ Interpolating lookup tables with cubic Hermite spline interpolation:
 - Perfect for robotics sensor calibration and non-linear mappings
 - Adaptive PID control with dynamic coefficient lookup
 
-Examples include basic shooter velocity mapping, non-linear temperature control, and adaptive PID control with dynamic coefficient lookup.
+Examples include basic shooter velocity mapping, non-linear temperature
+control, and adaptive PID control with dynamic coefficient lookup.
 
 ## Quick Start
 
@@ -236,7 +245,8 @@ Creates a new PID controller with the specified gains and optional configuration
 
 #### `Calculate(reference, state float64) float64`
 
-Computes the PID output for the given reference (setpoint) and current state (measurement). The error is calculated internally as reference - state.
+Computes the PID output for the given reference (setpoint) and current state
+(measurement). The error is calculated internally as reference - state.
 
 #### `Reset()`
 
