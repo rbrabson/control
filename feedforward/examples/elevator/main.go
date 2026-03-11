@@ -1,88 +1,99 @@
+// Package main demonstrates elevator feed-forward with gravity compensation.
+//
+// This example shows how gravity compensation provides constant upward force
+// to counteract the weight of the elevator car.
 package main
 
 import (
 	"fmt"
-	"time"
 
 	"control/feedforward"
 )
 
-// ElevatorControlExample demonstrates feedforward control for an elevator system
-// with gravity compensation using the WithGravityGain option.
 func main() {
-	fmt.Println("=== Elevator Feedforward Control Example ===")
-	fmt.Println("Simulating elevator control with gravity compensation")
+	fmt.Println("Elevator Feed-Forward Example")
+	fmt.Println("============================")
 	fmt.Println()
 
-	// Create feedforward controller with gravity compensation
-	// The gravity gain counteracts the weight of the elevator car
+	fmt.Println("Gravity Compensation for Elevators")
+	fmt.Println("----------------------------------")
+	fmt.Println("Gravity term provides constant upward force")
+	fmt.Println("to counteract elevator car weight.")
+	fmt.Println()
+
+	// Create controller with gravity compensation
 	ff := feedforward.New(
-		0.05,                              // kS: static gain
-		1.2,                               // kV: velocity gain (higher for elevator dynamics)
+		0.05,                              // kS: static friction
+		1.2,                               // kV: velocity gain
 		0.08,                              // kA: acceleration gain
-		feedforward.WithGravityGain(9.81), // Gravity compensation
+		feedforward.WithGravityGain(9.81), // kG: gravity (9.81 m/s²)
 	)
 
-	// Simulate elevator moving between floors
-	floors := []struct {
-		name   string
-		height float64 // meters
+	fmt.Println("Controller Configuration:")
+	fmt.Printf("  kS = %.2f (static friction)\n", 0.05)
+	fmt.Printf("  kV = %.1f (velocity gain)\n", 1.2)
+	fmt.Printf("  kA = %.2f (acceleration gain)\n", 0.08)
+	fmt.Printf("  kG = %.2f (gravity compensation)\n\n", 9.81)
+
+	// Test with different motion scenarios
+	fmt.Println("Test: Elevator Operation Scenarios")
+	fmt.Println("(position not used, only velocity and acceleration)")
+	fmt.Printf("\n%-28s %-10s %-10s %-10s\n", "Scenario", "Velocity", "Accel", "Output")
+	fmt.Printf("%-28s %-10s %-10s %-10s\n", "--------", "--------", "-----", "------")
+
+	scenarios := []struct {
+		name  string
+		vel   float64
+		accel float64
 	}{
-		{"Ground", 0.0},
-		{"Floor 2", 3.5},
-		{"Floor 5", 14.0},
-		{"Floor 8", 28.0},
+		{"At rest", 0.0, 0.0},
+		{"Constant up (1 m/s)", 1.0, 0.0},
+		{"Constant down (-1 m/s)", -1.0, 0.0},
+		{"Accelerating up", 1.5, 0.5},
+		{"Decelerating", 0.5, -0.5},
+		{"Fast constant (2 m/s)", 2.0, 0.0},
 	}
 
-	fmt.Printf("%-8s %-12s %-12s %-12s %-12s %-12s\n",
-		"Time", "Floor", "Position", "Velocity", "Accel", "FF Output")
-	fmt.Println("------------------------------------------------------------------------")
+	position := 10.0 // Position doesn't affect gravity term
 
-	timeStep := 0.2
-	for i := 0; i < len(floors)-1; i++ {
-		startHeight := floors[i].height
-		endHeight := floors[i+1].height
-		distance := endHeight - startHeight
-		moveTime := 4.0 // seconds to move between floors
-
-		fmt.Printf("Moving from %s to %s...\n", floors[i].name, floors[i+1].name)
-
-		for t := 0.0; t <= moveTime; t += timeStep {
-			// S-curve motion profile for smooth elevator movement
-			normalizedTime := t / moveTime
-			var s, v, a float64
-
-			if normalizedTime < 0.5 {
-				// Acceleration phase
-				s = 2 * normalizedTime * normalizedTime
-				v = 4 * normalizedTime / moveTime
-				a = 4 / (moveTime * moveTime)
-			} else {
-				// Deceleration phase
-				s = 1 - 2*(1-normalizedTime)*(1-normalizedTime)
-				v = 4 * (1 - normalizedTime) / moveTime
-				a = -4 / (moveTime * moveTime)
-			}
-
-			position := startHeight + s*distance
-			velocity := v * distance
-			acceleration := a * distance
-
-			// Calculate feedforward output (includes gravity compensation)
-			ffOutput := ff.Calculate(position, velocity, acceleration)
-
-			fmt.Printf("%-8.1f %-12s %-12.2f %-12.3f %-12.3f %-12.3f\n",
-				t, fmt.Sprintf("%.1fm", position), position, velocity, acceleration, ffOutput)
-
-			time.Sleep(100 * time.Millisecond)
-		}
-		fmt.Println()
+	for _, scenario := range scenarios {
+		output := ff.Calculate(position, scenario.vel, scenario.accel)
+		fmt.Printf("%-28s %-10.1f %-10.1f %-10.3f\n",
+			scenario.name, scenario.vel, scenario.accel, output)
 	}
 
-	fmt.Println("=== Analysis ===")
-	fmt.Println("Gravity compensation provides:")
-	fmt.Println("- Constant upward force to counteract elevator weight")
-	fmt.Println("- Reduced motor effort during upward movement")
-	fmt.Println("- More consistent performance regardless of direction")
-	fmt.Printf("- Base gravity compensation: %.2f N\n", 9.81)
+	// Detailed breakdown
+	fmt.Println("\nDetailed Breakdown:")
+	fmt.Println("------------------")
+
+	fmt.Println("\nAt Rest (v=0, a=0):")
+	output1 := ff.Calculate(position, 0.0, 0.0)
+	fmt.Printf("  Output = kV*v + kA*a + kG\n")
+	fmt.Printf("  Output = %.1f*%.1f + %.2f*%.1f + %.2f\n",
+		1.2, 0.0, 0.08, 0.0, 9.81)
+	fmt.Printf("  Output = %.1f + %.2f + %.2f = %.3f\n",
+		0.0, 0.0, 9.81, output1)
+	fmt.Println("  (Gravity compensation keeps elevator from falling)")
+
+	fmt.Println("\nConstant Up (v=1.0, a=0):")
+	output2 := ff.Calculate(position, 1.0, 0.0)
+	fmt.Printf("  Output = kV*v + kA*a + kG\n")
+	fmt.Printf("  Output = %.1f*%.1f + %.2f*%.1f + %.2f\n",
+		1.2, 1.0, 0.08, 0.0, 9.81)
+	fmt.Printf("  Output = %.1f + %.2f + %.2f = %.3f\n",
+		1.2*1.0, 0.0, 9.81, output2)
+
+	fmt.Println("\nAccelerating Up (v=1.5, a=0.5):")
+	output3 := ff.Calculate(position, 1.5, 0.5)
+	fmt.Printf("  Output = kV*v + kA*a + kG\n")
+	fmt.Printf("  Output = %.1f*%.1f + %.2f*%.1f + %.2f\n",
+		1.2, 1.5, 0.08, 0.5, 9.81)
+	fmt.Printf("  Output = %.2f + %.2f + %.2f = %.3f\n",
+		1.2*1.5, 0.08*0.5, 9.81, output3)
+
+	fmt.Println("\nKey Points:")
+	fmt.Println("• Gravity term is constant (position-independent)")
+	fmt.Println("• Always adds upward force to counteract weight")
+	fmt.Println("• Velocity and acceleration terms add to gravity")
+	fmt.Println("• Essential for vertical motion systems")
 }

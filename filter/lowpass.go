@@ -6,30 +6,30 @@ import (
 
 // LowPassFilter implements a simple first-order low-pass filter.
 //
-// The filter uses the formula: estimate = gain * previousEstimate + (1-gain) * measurement
-// where gain is between 0 and 1.
+// The filter uses the formula: estimate = alpha * previousEstimate + (1-alpha) * measurement
+// where alpha is between 0 and 1.
 //
-// High values of gain (closer to 1) are smoother but have more phase lag.
-// Low values of gain (closer to 0) allow more noise but respond faster to changes.
+// High values of alpha (closer to 1) are smoother but have more phase lag.
+// Low values of alpha (closer to 0) allow more noise but respond faster to changes.
 type LowPassFilter struct {
-	gain             float64 // Filter gain (0 < gain < 1)
+	alpha            float64 // Filter alpha (0 < alpha < 1)
 	previousEstimate float64 // Previous filtered value
 	initialized      bool    // Whether the filter has been initialized
 }
 
-// NewLowPassFilter creates a new low-pass filter with the specified gain.
+// NewLowPassFilter creates a new low-pass filter with the specified alpha.
 //
 // Parameters:
-//   - gain: Filter gain (0 < gain < 1). Higher values = smoother but more lag.
+//   - alpha: Filter alpha (0 < alpha < 1). Higher values = smoother but more lag.
 //
-// Returns an error if gain is not in the valid range (0, 1).
-func NewLowPassFilter(gain float64) (*LowPassFilter, error) {
-	if gain <= 0 || gain >= 1 {
-		return nil, errors.New("gain must be between 0 and 1 (exclusive)")
+// Returns an error if alpha is not in the valid range (0, 1).
+func NewLowPassFilter(alpha float64) (*LowPassFilter, error) {
+	if alpha <= 0 || alpha >= 1 {
+		return nil, errors.New("alpha must be between 0 and 1 (exclusive)")
 	}
 
 	return &LowPassFilter{
-		gain:             gain,
+		alpha:            alpha,
 		previousEstimate: 0.0,
 		initialized:      false,
 	}, nil
@@ -48,24 +48,30 @@ func (lpf *LowPassFilter) Estimate(measurement float64) float64 {
 		return measurement
 	}
 
-	// Apply low-pass filter: estimate = gain * previous + (1-gain) * measurement
-	estimate := lpf.gain*lpf.previousEstimate + (1-lpf.gain)*measurement
+	// Apply low-pass filter: estimate = alpha * previous + (1-alpha) * measurement
+	estimate := lpf.alpha*lpf.previousEstimate + (1-lpf.alpha)*measurement
 	lpf.previousEstimate = estimate
 	return estimate
 }
 
-// GetGain returns the current filter gain.
-func (lpf *LowPassFilter) GetGain() float64 {
-	return lpf.gain
+// GetAlpha returns the current filter alpha.
+func (lpf *LowPassFilter) GetAlpha() float64 {
+	return lpf.alpha
 }
 
-// SetGain updates the filter gain.
-// Returns an error if the new gain is not in the valid range (0, 1).
-func (lpf *LowPassFilter) SetGain(gain float64) error {
-	if gain <= 0 || gain >= 1 {
-		return errors.New("gain must be between 0 and 1 (exclusive)")
+// GetGain returns the current filter alpha (alias for GetAlpha).
+// This method exists to satisfy the Filter interface.
+func (lpf *LowPassFilter) GetGain() float64 {
+	return lpf.alpha
+}
+
+// SetAlpha updates the filter alpha.
+// Returns an error if the new alpha is not in the valid range (0, 1).
+func (lpf *LowPassFilter) SetAlpha(alpha float64) error {
+	if alpha <= 0 || alpha >= 1 {
+		return errors.New("alpha must be between 0 and 1 (exclusive)")
 	}
-	lpf.gain = gain
+	lpf.alpha = alpha
 	return nil
 }
 

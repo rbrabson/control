@@ -1,275 +1,114 @@
-// Package main demonstrates a comparison between Kalman and LowPass filters in PID control.
+// Package main demonstrates comparing different derivative filter options in PID.
 //
-// This example shows how different filter types affect PID controller performance
-// in noisy environments, demonstrating trade-offs between filtering effectiveness
-// and computational cost.
+// This example compares no filter, low-pass filter, and Kalman filter
+// to show the effect on control output smoothness.
 package main
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
-	"time"
 
 	"control/filter"
 	"control/pid"
 )
 
-// SystemSimulator represents a first-order system with noise
-type SystemSimulator struct {
-	currentState   float64
-	timeConstant   float64
-	noiseMagnitude float64
-}
-
-// NewSystemSimulator creates a new system simulator
-func NewSystemSimulator(initialState, timeConstant, noiseMagnitude float64) *SystemSimulator {
-	return &SystemSimulator{
-		currentState:   initialState,
-		timeConstant:   timeConstant,
-		noiseMagnitude: noiseMagnitude,
-	}
-}
-
-// Update simulates one time step of the system
-// Uses first-order dynamics: dx/dt = (u - x) / tau
-func (s *SystemSimulator) Update(controlInput, dt float64) float64 {
-	// System dynamics
-	derivative := (controlInput - s.currentState) / s.timeConstant
-	s.currentState += derivative * dt
-
-	return s.currentState
-}
-
-// GetMeasurement returns the current state with added measurement noise
-func (s *SystemSimulator) GetMeasurement() float64 {
-	noise := (rand.Float64() - 0.5) * 2 * s.noiseMagnitude
-	return s.currentState + noise
-}
-
-// ControllerMetrics tracks controller performance
-type ControllerMetrics struct {
-	name         string
-	totalError   float64
-	maxError     float64
-	outputs      []float64
-	measurements []float64
-	filterType   string
-}
-
-// NewControllerMetrics creates a new metrics tracker
-func NewControllerMetrics(name, filterType string) *ControllerMetrics {
-	return &ControllerMetrics{
-		name:         name,
-		filterType:   filterType,
-		outputs:      make([]float64, 0),
-		measurements: make([]float64, 0),
-	}
-}
-
-// UpdateMetrics records performance data
-func (m *ControllerMetrics) UpdateMetrics(error, output, measurement float64) {
-	m.totalError += math.Abs(error)
-	if math.Abs(error) > m.maxError {
-		m.maxError = math.Abs(error)
-	}
-	m.outputs = append(m.outputs, output)
-	m.measurements = append(m.measurements, measurement)
-}
-
-// CalculateVariance computes output variance (smoothness metric)
-func (m *ControllerMetrics) CalculateVariance() float64 {
-	if len(m.outputs) == 0 {
-		return 0
-	}
-
-	var sum float64
-	for _, v := range m.outputs {
-		sum += v
-	}
-	mean := sum / float64(len(m.outputs))
-
-	var variance float64
-	for _, v := range m.outputs {
-		diff := v - mean
-		variance += diff * diff
-	}
-	return variance / float64(len(m.outputs))
-}
-
-// PrintResults displays the metrics
-func (m *ControllerMetrics) PrintResults() {
-	fmt.Printf("\n%s (%s Filter)\n", m.name, m.filterType)
-	fmt.Println("----------------------------------------")
-	fmt.Printf("Total Absolute Error:    %.4f\n", m.totalError)
-	fmt.Printf("Maximum Error:           %.4f\n", m.maxError)
-	fmt.Printf("Output Variance:         %.4f (lower is smoother)\n", m.CalculateVariance())
-	fmt.Printf("Average Output:          %.4f\n", calculateMean(m.outputs))
-}
-
-// calculateMean computes the mean of a slice
-func calculateMean(values []float64) float64 {
-	if len(values) == 0 {
-		return 0
-	}
-	var sum float64
-	for _, v := range values {
-		sum += v
-	}
-	return sum / float64(len(values))
-}
-
-// calculateStdDev computes the standard deviation
-func calculateStdDev(values []float64) float64 {
-	if len(values) == 0 {
-		return 0
-	}
-	mean := calculateMean(values)
-	var variance float64
-	for _, v := range values {
-		diff := v - mean
-		variance += diff * diff
-	}
-	variance /= float64(len(values))
-	return math.Sqrt(variance)
-}
-
 func main() {
-	fmt.Println("Kalman Filter vs LowPass Filter - PID Control Comparison")
-	fmt.Println("=======================================================")
+	fmt.Println("PID Filter Comparison Example")
+	fmt.Println("============================")
 
-	// Simulation parameters
-	setpoint := 50.0
-	duration := 10.0 // Simulation duration in seconds
-	dt := 0.01       // Time step in seconds
-	iterations := int(duration / dt)
-
-	// System parameters
-	initialState := 10.0
-	timeConstant := 1.0
-	noiseMagnitude := 2.0
-
-	// PID parameters
-	kP := 0.5
-	kI := 0.1
-	kD := 0.05
+	fmt.Println("Comparing Derivative Filter Types")
+	fmt.Println("---------------------------------")
+	fmt.Println("Demonstrates differences between no filter,")
+	fmt.Println("low-pass filter, and Kalman filter.")
+	fmt.Println()
 
 	// Create controllers with different filters
-	// LowPass filter controller
-	lpFilter, _ := filter.NewLowPassFilter(0.5)
-	lpPID := pid.New(kP, kI, kD,
-		pid.WithFilter(lpFilter),
-		pid.WithOutputLimits(-100.0, 100.0),
-	)
-	lpMetrics := NewControllerMetrics("LowPass Filter Controller", "LowPass")
+	pidNoFilter := pid.New(1.0, 0.2, 0.8)
 
-	// Kalman filter controller (sensor covariance 0.05, model covariance 0.1, 10 states)
-	kfFilter, _ := filter.NewKalmanFilter(0.05, 0.1, 10)
-	kfPID := pid.New(kP, kI, kD,
-		pid.WithFilter(kfFilter),
-		pid.WithOutputLimits(-100.0, 100.0),
-	)
-	kfMetrics := NewControllerMetrics("Kalman Filter Controller", "Kalman")
+	lowpassFilter, _ := filter.NewLowPassFilter(0.5)
+	pidLowpass := pid.New(1.0, 0.2, 0.8,
+		pid.WithFilter(lowpassFilter))
 
-	// No filter controller for comparison
-	nfPID := pid.New(kP, kI, kD,
-		pid.WithOutputLimits(-100.0, 100.0),
-	)
-	nfMetrics := NewControllerMetrics("No Filter Controller", "None")
+	kalmanFilter, _ := filter.NewKalmanFilter(0.1, 1.0, 5)
+	pidKalman := pid.New(1.0, 0.2, 0.8,
+		pid.WithFilter(kalmanFilter))
 
-	// Create systems for each controller
-	lpSystem := NewSystemSimulator(initialState, timeConstant, noiseMagnitude)
-	kfSystem := NewSystemSimulator(initialState, timeConstant, noiseMagnitude)
-	nfSystem := NewSystemSimulator(initialState, timeConstant, noiseMagnitude)
+	fmt.Println("Controller Configuration:")
+	fmt.Println("  All: Kp=1.0, Ki=0.2, Kd=0.8")
+	fmt.Println("  No Filter: Raw derivative")
+	fmt.Println("  Low-Pass: alpha=0.5")
+	fmt.Println("  Kalman: process_var=0.1, measurement_var=1.0")
+	fmt.Println()
 
-	fmt.Printf("Simulation Parameters:\n")
-	fmt.Printf("  Setpoint:          %.1f\n", setpoint)
-	fmt.Printf("  Duration:          %.1f seconds\n", duration)
-	fmt.Printf("  Time Step:         %.3f seconds\n", dt)
-	fmt.Printf("  System Time Const: %.1f seconds\n", timeConstant)
-	fmt.Printf("  Noise Magnitude:   %.1f\n\n", noiseMagnitude)
+	// Test with noisy state measurements
+	fmt.Println("Test: Approaching Setpoint with Measurement Noise")
+	fmt.Printf("\n%-6s %-10s %-8s %-11s %-11s %-11s\n", "Step", "Setpoint", "State", "No Filter", "Low-Pass", "Kalman")
+	fmt.Printf("%-6s %-10s %-8s %-11s %-11s %-11s\n", "----", "--------", "-----", "---------", "--------", "------")
 
-	// Run simulation
-	for range iterations {
-		// Update LowPass filter system
-		lpMeasurement := lpSystem.GetMeasurement()
-		lpOutput := lpPID.Calculate(setpoint, lpMeasurement)
-		lpSystem.Update(lpOutput, dt)
-		lpError := setpoint - lpSystem.currentState
-		lpMetrics.UpdateMetrics(lpError, lpOutput, lpMeasurement)
+	setpoint := 100.0
+	dt := 0.1
 
-		// Update Kalman filter system
-		kfMeasurement := kfSystem.GetMeasurement()
-		kfOutput := kfPID.Calculate(setpoint, kfMeasurement)
-		kfSystem.Update(kfOutput, dt)
-		kfError := setpoint - kfSystem.currentState
-		kfMetrics.UpdateMetrics(kfError, kfOutput, kfMeasurement)
-
-		// Update No filter system
-		nfMeasurement := nfSystem.GetMeasurement()
-		nfOutput := nfPID.Calculate(setpoint, nfMeasurement)
-		nfSystem.Update(nfOutput, dt)
-		nfError := setpoint - nfSystem.currentState
-		nfMetrics.UpdateMetrics(nfError, nfOutput, nfMeasurement)
-		time.Sleep(time.Duration(dt * float64(time.Second)))
+	// Simulated noisy measurements (ideal state with noise)
+	noisyStates := []float64{
+		0.0,   // Start
+		18.5,  // Should be 20, but has noise
+		41.2,  // Should be 40
+		58.8,  // Should be 60
+		81.5,  // Should be 80
+		89.2,  // Should be 90
+		94.5,  // Should be 95
+		97.8,  // Should be 98
+		99.3,  // Should be 99
+		100.2, // Should be 100
 	}
 
-	// Print results
-	lpMetrics.PrintResults()
-	kfMetrics.PrintResults()
-	nfMetrics.PrintResults()
+	for i, state := range noisyStates {
+		outNoFilter := pidNoFilter.CalculateWithDt(setpoint, state, dt)
+		outLowpass := pidLowpass.CalculateWithDt(setpoint, state, dt)
+		outKalman := pidKalman.CalculateWithDt(setpoint, state, dt)
 
-	// Comparative analysis
-	fmt.Println("\nComparative Analysis")
-	fmt.Println("-------------------")
-
-	lpVar := lpMetrics.CalculateVariance()
-	kfVar := kfMetrics.CalculateVariance()
-	nfVar := nfMetrics.CalculateVariance()
-
-	fmt.Printf("\nOutput Smoothness (Variance):\n")
-	fmt.Printf("  LowPass:  %.4f\n", lpVar)
-	fmt.Printf("  Kalman:   %.4f\n", kfVar)
-	fmt.Printf("  None:     %.4f\n", nfVar)
-
-	if kfVar < lpVar {
-		reduction := ((lpVar - kfVar) / lpVar) * 100
-		fmt.Printf("\n✓ Kalman filter is %.1f%% smoother than LowPass\n", reduction)
-	} else {
-		reduction := ((kfVar - lpVar) / kfVar) * 100
-		fmt.Printf("\n✓ LowPass filter is %.1f%% smoother than Kalman\n", reduction)
+		fmt.Printf("%-6d %-10.0f %-8.1f %-11.3f %-11.3f %-11.3f\n",
+			i+1, setpoint, state, outNoFilter, outLowpass, outKalman)
 	}
 
-	fmt.Printf("\nError Tracking (Lower is Better):\n")
-	fmt.Printf("  LowPass:  %.4f\n", lpMetrics.totalError)
-	fmt.Printf("  Kalman:   %.4f\n", kfMetrics.totalError)
-	fmt.Printf("  None:     %.4f\n", nfMetrics.totalError)
+	fmt.Println("\nOutput Smoothness Comparison:")
+	fmt.Println("-----------------------------")
 
-	fmt.Printf("\nFinal State Values (Should approach %.1f):\n", setpoint)
-	fmt.Printf("  LowPass:  %.4f\n", lpSystem.currentState)
-	fmt.Printf("  Kalman:   %.4f\n", kfSystem.currentState)
-	fmt.Printf("  None:     %.4f\n", nfSystem.currentState)
+	// Compare derivative response to sudden change
+	pidNoFilter.Reset()
+	pidLowpass.Reset()
+	pidKalman.Reset()
 
-	// Performance summary
-	fmt.Println("\nPerformance Summary")
-	fmt.Println("-------------------")
+	fmt.Println("\nSudden State Jump (0 → 50):")
+	state1 := 0.0
+	state2 := 50.0
 
-	lpStdDev := calculateStdDev(lpMetrics.outputs)
-	kfStdDev := calculateStdDev(kfMetrics.outputs)
-	nfStdDev := calculateStdDev(nfMetrics.outputs)
+	pidNoFilter.Calculate(setpoint, state1)
+	pidLowpass.Calculate(setpoint, state1)
+	pidKalman.Calculate(setpoint, state1)
 
-	fmt.Printf("\nOutput Standard Deviation (Control Effort Consistency):\n")
-	fmt.Printf("  LowPass:  %.6f\n", lpStdDev)
-	fmt.Printf("  Kalman:   %.6f\n", kfStdDev)
-	fmt.Printf("  None:     %.6f\n", nfStdDev)
+	outNo := pidNoFilter.CalculateWithDt(setpoint, state2, dt)
+	outLow := pidLowpass.CalculateWithDt(setpoint, state2, dt)
+	outKal := pidKalman.CalculateWithDt(setpoint, state2, dt)
 
-	fmt.Println("\nKey Observations:")
-	fmt.Println("-----------------")
-	fmt.Println("• Kalman Filter: Advanced state estimation, adapts to system dynamics")
-	fmt.Println("• LowPass Filter: Simple, computationally efficient, fixed smoothing")
-	fmt.Println("• No Filter: Most responsive but noisiest output")
-	fmt.Println("\nChoose based on your application:")
-	fmt.Println("- Use Kalman when you have good knowledge of system dynamics")
-	fmt.Println("- Use LowPass for simplicity and predictable behavior")
-	fmt.Println("- Use No Filter when response speed is critical")
+	fmt.Printf("No filter output: %.3f (raw derivative spike)\n", outNo)
+	fmt.Printf("Low-pass output:  %.3f (first-step response)\n", outLow)
+	fmt.Printf("Kalman output:    %.3f (predicted and filtered)\n", outKal)
+
+	fmt.Println("\nAnalysis:")
+	fmt.Println("---------")
+	fmt.Println("No Filter:")
+	fmt.Println("  • Most responsive to changes")
+	fmt.Println("  • Amplifies measurement noise")
+	fmt.Println("  • Large derivative kicks")
+	fmt.Println()
+	fmt.Println("Low-Pass Filter:")
+	fmt.Println("  • Simple and computationally cheap")
+	fmt.Println("  • Good noise reduction")
+	fmt.Println("  • Introduces phase lag")
+	fmt.Println()
+	fmt.Println("Kalman Filter:")
+	fmt.Println("  • Optimal for Gaussian noise")
+	fmt.Println("  • Estimates true state and derivative")
+	fmt.Println("  • More complex but best performance")
+	fmt.Println("  • Requires tuning process/measurement variance")
 }

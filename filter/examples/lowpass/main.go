@@ -1,164 +1,86 @@
-// Package main demonstrates LowPass filter usage for signal smoothing.
+// Package main demonstrates first-order low-pass filter behavior.
 //
-// This example shows how to use the LowPass filter to smooth noisy signals
-// and demonstrates the effect of different gain values on filter behavior.
+// This example shows the basic operation of a low-pass filter,
+// matching the behavior tested in LowPassFilterTest.java.
 package main
 
 import (
 	"fmt"
 	"math"
-	"math/rand"
 
 	"control/filter"
 )
 
-// generateNoisySignal creates a signal with added random noise
-func generateNoisySignal(t, amplitude, frequency, noiseLevel float64) float64 {
-	signal := amplitude * math.Sin(2*math.Pi*frequency*t)
-	noise := (rand.Float64() - 0.5) * noiseLevel
-	return signal + noise
-}
-
 func main() {
-	fmt.Println("Low-Pass Filter Signal Smoothing Example")
-	fmt.Println("=======================================")
+	fmt.Println("Low-Pass Filter: First-Order Filtering")
+	fmt.Println("======================================")
+	fmt.Println()
 
-	// Create filters with different gains
-	lowGainFilter, err := filter.NewLowPassFilter(0.1) // Fast response, less smoothing
+	// Create a low-pass filter with alpha = 0.5
+	// Formula: output = alpha * previous + (1-alpha) * measurement
+	lpf, err := filter.NewLowPassFilter(0.5)
 	if err != nil {
-		panic(err)
-	}
-	medGainFilter, err := filter.NewLowPassFilter(0.5) // Balanced
-	if err != nil {
-		panic(err)
-	}
-	highGainFilter, err := filter.NewLowPassFilter(0.9) // Slow response, more smoothing
-	if err != nil {
-		panic(err)
+		fmt.Printf("Error creating filter: %v\n", err)
+		return
 	}
 
 	fmt.Println("Filter Configuration:")
-	fmt.Printf("  Low Gain (0.1):  Fast response, minimal smoothing\n")
-	fmt.Printf("  Med Gain (0.5):  Balanced response and smoothing\n")
-	fmt.Printf("  High Gain (0.9): Slow response, maximum smoothing\n\n")
+	fmt.Printf("  Alpha: %.1f\n", lpf.GetAlpha())
+	fmt.Println("  Formula: output = 0.5 * previous + 0.5 * measurement")
+	fmt.Println()
 
-	// Signal parameters
-	amplitude := 10.0
-	frequency := 0.1 // Hz
-	noiseLevel := 3.0
-	timeStep := 0.1 // seconds
-	numSamples := 50
+	// Test the filter behavior matching Java test
+	fmt.Println("Testing filter behavior:")
+	fmt.Printf("%-6s %-8s %-12s %-24s\n", "Step", "Input", "Output", "Expected")
+	fmt.Printf("%-6s %-8s %-12s %-24s\n", "----", "-----", "------", "--------")
 
-	fmt.Println("Time\tNoisy\tLow(0.1)\tMed(0.5)\tHigh(0.9)")
-	fmt.Println("----\t-----\t--------\t--------\t---------")
+	// First estimate: initializes with input value
+	input1 := 10.0
+	output1 := lpf.Estimate(input1)
+	fmt.Printf("%-6d %-8.1f %-12.6f %-24s\n", 1, input1, output1, fmt.Sprintf("%.1f (initialization)", input1))
 
-	var totalNoise, totalLowError, totalMedError, totalHighError float64
-
-	for i := 0; i < numSamples; i++ {
-		t := float64(i) * timeStep
-
-		// Generate clean signal (for error calculation)
-		cleanSignal := amplitude * math.Sin(2*math.Pi*frequency*t)
-
-		// Generate noisy measurement
-		noisySignal := generateNoisySignal(t, amplitude, frequency, noiseLevel)
-
-		// Apply filters
-		lowFiltered := lowGainFilter.Estimate(noisySignal)
-		medFiltered := medGainFilter.Estimate(noisySignal)
-		highFiltered := highGainFilter.Estimate(noisySignal)
-
-		// Calculate errors compared to clean signal
-		noiseError := math.Abs(noisySignal - cleanSignal)
-		lowError := math.Abs(lowFiltered - cleanSignal)
-		medError := math.Abs(medFiltered - cleanSignal)
-		highError := math.Abs(highFiltered - cleanSignal)
-
-		totalNoise += noiseError
-		totalLowError += lowError
-		totalMedError += medError
-		totalHighError += highError
-
-		// Print every 5 samples
-		if i%5 == 0 || i == numSamples-1 {
-			fmt.Printf("%.1f\t%.2f\t%.2f\t\t%.2f\t\t%.2f\n",
-				t, noisySignal, lowFiltered, medFiltered, highFiltered)
-		}
+	// Verify first output matches
+	if math.Abs(output1-10.0) < 1e-9 {
+		fmt.Printf("%-6s %-8s %-12s %-24s\n", "", "", "", "✓ Match")
 	}
 
-	fmt.Println()
-	fmt.Println("Performance Analysis:")
-	fmt.Println("====================")
+	// Second estimate: applies filtering
+	// Expected: 0.5 * 10.0 + 0.5 * 20.0 = 15.0
+	input2 := 20.0
+	output2 := lpf.Estimate(input2)
+	expected2 := 15.0
+	fmt.Printf("%-6d %-8.1f %-12.6f %-24.1f\n", 2, input2, output2, expected2)
 
-	avgNoise := totalNoise / float64(numSamples)
-	avgLowError := totalLowError / float64(numSamples)
-	avgMedError := totalMedError / float64(numSamples)
-	avgHighError := totalHighError / float64(numSamples)
-
-	fmt.Printf("Average Errors (vs clean signal):\n")
-	fmt.Printf("  Raw Noisy:     %.3f\n", avgNoise)
-	fmt.Printf("  Low Gain:      %.3f (%.1f%% improvement)\n",
-		avgLowError, (avgNoise-avgLowError)/avgNoise*100)
-	fmt.Printf("  Medium Gain:   %.3f (%.1f%% improvement)\n",
-		avgMedError, (avgNoise-avgMedError)/avgNoise*100)
-	fmt.Printf("  High Gain:     %.3f (%.1f%% improvement)\n",
-		avgHighError, (avgNoise-avgHighError)/avgNoise*100)
-
-	fmt.Println()
-	fmt.Println("Step Response Comparison:")
-	fmt.Println("========================")
-
-	// Reset filters and test step response
-	lowGainFilter.Reset()
-	medGainFilter.Reset()
-	highGainFilter.Reset()
-
-	// Initialize with 0
-	lowGainFilter.Estimate(0.0)
-	medGainFilter.Estimate(0.0)
-	highGainFilter.Estimate(0.0)
-
-	fmt.Println("Step\tLow(0.1)\tMed(0.5)\tHigh(0.9)")
-	fmt.Println("----\t--------\t--------\t---------")
-
-	// Apply step input of 10.0
-	for step := 1; step <= 10; step++ {
-		lowResp := lowGainFilter.Estimate(10.0)
-		medResp := medGainFilter.Estimate(10.0)
-		highResp := highGainFilter.Estimate(10.0)
-
-		fmt.Printf("%d\t%.3f\t\t%.3f\t\t%.3f\n", step, lowResp, medResp, highResp)
-
-		// Stop when all are close to final value
-		if step >= 5 && lowResp > 9.9 && medResp > 9.9 && highResp > 9.5 {
-			break
-		}
+	// Verify second output matches
+	if math.Abs(output2-15.0) < 1e-9 {
+		fmt.Printf("%-6s %-8s %-12s %-24s\n", "", "", "", "✓ Match")
 	}
 
-	fmt.Println()
-	fmt.Println("Filter Characteristics:")
-	fmt.Println("======================")
-	fmt.Println("• Low Gain (0.1):  Fast response, reaches ~99% in 2-3 steps, minimal noise rejection")
-	fmt.Println("• Medium Gain (0.5): Moderate response, reaches ~99% in 4-5 steps, good balance")
-	fmt.Println("• High Gain (0.9):  Slow response, reaches ~99% in 8-10 steps, excellent noise rejection")
+	// Continue to show convergence
+	fmt.Println("\nContinued filtering (converging to input):")
+	fmt.Printf("%-6s %-8s %-12s\n", "Step", "Input", "Output")
+	fmt.Printf("%-6s %-8s %-12s\n", "----", "-----", "------")
 
-	fmt.Println()
-	fmt.Println("Usage Guidelines:")
-	fmt.Println("================")
-	fmt.Println("• Use LOW gain (0.1-0.3) for:")
-	fmt.Println("  - Fast-changing signals")
-	fmt.Println("  - Real-time control systems requiring quick response")
-	fmt.Println("  - When signal already has low noise")
+	for i := 3; i <= 10; i++ {
+		output := lpf.Estimate(20.0)
+		fmt.Printf("%-6d %-8.1f %-12.6f\n", i, 20.0, output)
+	}
 
-	fmt.Println()
-	fmt.Println("• Use MEDIUM gain (0.4-0.6) for:")
-	fmt.Println("  - General-purpose filtering")
-	fmt.Println("  - Balanced noise rejection and response speed")
-	fmt.Println("  - Most sensor filtering applications")
+	// Demonstrate step response
+	fmt.Println("\nStep Response (input changes from 20 to 40):")
+	fmt.Printf("%-6s %-8s %-12s\n", "Step", "Input", "Output")
+	fmt.Printf("%-6s %-8s %-12s\n", "----", "-----", "------")
 
-	fmt.Println()
-	fmt.Println("• Use HIGH gain (0.7-0.9) for:")
-	fmt.Println("  - Very noisy signals")
-	fmt.Println("  - Slowly changing processes")
-	fmt.Println("  - When smooth output is more important than fast response")
+	for i := 1; i <= 8; i++ {
+		output := lpf.Estimate(40.0)
+		fmt.Printf("%-6d %-8.1f %-12.6f\n", i, 40.0, output)
+	}
+
+	fmt.Println("\nKey Points:")
+	fmt.Println("• First call initializes filter with input value")
+	fmt.Println("• Subsequent calls apply exponential smoothing")
+	fmt.Println("• Alpha controls smoothing (0.5 = balanced)")
+	fmt.Println("• Output gradually converges to input value")
+	fmt.Println("• Higher alpha = more smoothing, slower response")
+	fmt.Println("• Lower alpha = less smoothing, faster response")
 }

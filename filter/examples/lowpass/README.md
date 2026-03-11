@@ -1,15 +1,14 @@
-# Low-Pass Filter Signal Smoothing Example
+# Low-Pass Filter Basic Example
 
-This example demonstrates a simple but powerful low-pass filter for removing high-frequency noise from signal measurements while preserving the important low-frequency content.
+This example demonstrates first-order low-pass filtering behavior, matching the test cases in the Java implementation.
 
 ## What This Example Shows
 
-- Low-pass filter fundamentals
-- Simple first-order filtering equation
-- Noise attenuation vs. phase lag trade-off
-- Real-time signal smoothing
-- Cutoff frequency effect
-- Practical application to measurement data
+- Basic first-order exponential smoothing
+- Filter initialization with first measurement
+- Gradual convergence to input value
+- Step response behavior
+- Simple, focused demonstration
 
 ## Running the Example
 
@@ -20,83 +19,49 @@ go run main.go
 
 ## Key Learning Points
 
-### Low-Pass Filter Concepts
+### First-Order Filter Equation
 
-The example demonstrates:
-
-- **First-Order Filter**: Simplest useful filtering approach
-- **Exponential Smoothing**: Weighted average of past and current measurement
-- **Cutoff Frequency**: Transition between passed and attenuated frequencies
-- **Phase Lag**: Trade-off between smoothing and responsiveness
-- **Computational Efficiency**: Very fast, minimal computation
-
-### Filter Equation
-
-The recursive equation is simple:
+The recursive equation is:
 
 ```math
-y_k = \alpha \cdot z_k + (1 - \alpha) \cdot y_{k-1}
+y_k = \alpha \cdot y_{k-1} + (1 - \alpha) \cdot z_k
 ```
 
 Where:
 
 - $y_k$: Filtered output at time k
-- $z_k$: Measurement at time k
-- $\alpha$: Filter gain (0 to 1)
+- $z_k$: Measurement at time k  
+- $\alpha$: Filter alpha (0 to 1)
 - $y_{k-1}$: Previous filtered output
+
+### Behavior
+
+- **First call**: Initializes filter with input value (returns input)
+- **Subsequent calls**: Applies exponential smoothing
+- **Convergence**: Output gradually approaches input value
+- **Alpha parameter**:
+  - High α (e.g., 0.9): More smoothing, slower response
+  - Low α (e.g., 0.1): Less smoothing, faster response
+  - α = 0.5: Balanced (50% old, 50% new)
 
 ## Output Interpretation
 
-The example displays:
+The example shows:
 
-- **Time**: Sample number or elapsed time
-- **Measurement**: Raw, noisy sensor reading
-- **Filtered**: Smoothed signal output
-- **Error**: High-frequency noise being removed
-- **Comparison**: Visual display of noise rejection
+1. **Initialization**: First estimate returns the input value exactly
+2. **Filtering**: Second estimate shows the smoothing formula in action
+3. **Convergence**: Multiple calls with constant input show gradual convergence
+4. **Step Response**: Behavior when input suddenly changes
 
-## System Parameters
+## Use Cases
 
-The example typically uses:
+Low-pass filters are used for:
 
-- **Filter Gain (α)**: Controls smoothing amount (0 < α < 1)
-- **Sample Rate**: How often filter runs
-- **Noise Level**: Amount of high-frequency noise to filter
-- **Signal**: Test pattern (step, ramp, sinusoid)
-
-## Further Exploration
-
-Try modifying:
-
-- `alpha` value - Lower for more smoothing, higher for faster response
-- Measurement noise - See how filter responds to different noise levels
-- Signal patterns - Test step response, ramp, sinusoid
-- Combine filters - Multiple stages for sharper cutoff
-- Compare with Kalman - See differences from optimal filter
-
-## Real-World Applications
-
-Low-pass filters are used in:
-
-- **Sensor Data**: Smoothing noisy measurement sensors
-- **Audio Processing**: Removing high-frequency noise from recordings
-- **Control Systems**: Filtering feedback signals
-- **Stock Price**: Moving averages in financial analysis
-- **Image Processing**: Blur effects and noise reduction
-- **Robotics**: Sensor fusion and smoothing
-- **Acceleration Measurements**: Removing vibration noise
-- **Temperature**: Smoothing thermal sensor readings
-- **Pressure**: Filtering pressure transducer noise
-- **Motor Control**: Smoothing current or velocity feedback
-
-## Filter Parameters
-
-### Gain (α)
-
-- α = 1: No filtering (output = measurement)
-- α = 0.5: 50% new, 50% old value (moderate smoothing)
-- α = 0.1: 10% new, 90% old value (heavy smoothing)
-- α → 0: Maximum smoothing, maximum lag
+- Sensor noise reduction
+- Signal smoothing
+- Derivative filtering (in PID control)
+- Moving averages
+- Data cleanup before processing
 
 ### Relationship to Cutoff Frequency
 

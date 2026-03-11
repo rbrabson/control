@@ -1,14 +1,13 @@
-# Basic Control Loop Example
+# Basic PID Controller Example
 
-This example demonstrates the fundamental usage of the PID controller with a simple simulated system.
+This example demonstrates the core PID controller features, matching the behavior tested in PIDTest.java.
 
 ## What This Example Shows
 
-- Creating a basic PID controller
-- Setting output limits for safety and realism
-- Running a control loop with proper timing
-- Monitoring system response and convergence
-- Simple first-order system dynamics simulation
+- Output limits that clamp controller output
+- Derivative filter option for smoother control
+- Combining multiple PID options
+- Basic PID calculation usage
 
 ## Running the Example
 
@@ -19,34 +18,44 @@ go run main.go
 
 ## Key Learning Points
 
-### PID Controller Basics
+### Test 1: Output Limits
 
-The example demonstrates:
+Shows how to constrain PID output to safe operating ranges:
 
-- **PID Gains**: How proportional, integral, and derivative terms affect control
-- **Output Limits**: Constraining controller output (max ±50 in this example)
-- **Feedback Loop**: Real-time adjustment based on error
-- **Convergence**: How the system reaches the setpoint
+- Creates PID with Kp=10.0 and limits [-5.0, 5.0]
+- Even with large error (10.0), output is clamped
+- Critical for real systems with actuator limits
 
-### Control Loop Timing
+### Test 2: Derivative Filter
 
-- Uses Go's `time` package for accurate loop timing
-- Demonstrates real-time control concepts
-- Shows sample-time impact on control performance
+Demonstrates derivative filtering to reduce noise sensitivity:
 
-## Output Interpretation
+- Creates PID with Kd=1.0 and low-pass filter (alpha=0.8)
+- Filter smooths derivative term calculations
+- Produces stable, finite output despite error changes
 
-The example displays:
+### Test 3: Combined Features
 
-- **Target**: The desired setpoint
-- **Time**: Elapsed simulation time in seconds
-- **Position**: Current system state
-- **Error**: Difference between target and actual position
-- **Output**: Control signal from PID controller
+Shows combining multiple PID options:
 
-## System Parameters
+- All three gains (P, I, D)
+- Output limits and derivative filter together
+- Simple control loop demonstration
 
-The example uses:
+## Application
+
+Use this pattern when:
+
+- Validating PID controller setup
+- Testing output limiting behavior
+- Verifying filter integration
+- Learning PID basics
+
+## See Also
+
+- [Simulation Example](../simulation/) - Time-stepping PID control
+- [Temperature Control](../temperature_control/) - Real-world application
+- [Filter Comparison](../filter_comparison/) - Different filter strategies
 
 - **Setpoint**: 100.0 units
 - **Time Constant**: 2.0 seconds (system response speed)

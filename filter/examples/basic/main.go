@@ -27,7 +27,8 @@ func trueSignal(t float64) float64 {
 func main() {
 	fmt.Println("Kalman Filter Signal Estimation Example")
 	fmt.Println("======================================")
-	
+	rand.Seed(42)
+
 	// Create Kalman filter
 	// Q (process noise): 0.01 - low process noise (signal changes slowly)
 	// R (measurement noise): 0.5 - moderate measurement noise
@@ -37,66 +38,75 @@ func main() {
 		fmt.Printf("Error creating Kalman filter: %v\n", err)
 		return
 	}
-	
+
 	fmt.Printf("Filter Parameters: Q=%.2f, R=%.2f, N=%d\n", 0.01, 0.5, 5)
 	fmt.Printf("Kalman Gain (K): %.4f\n", kf.GetK())
 	fmt.Printf("Error Covariance (P): %.4f\n\n", kf.GetP())
-	
+
 	// Simulation parameters
 	numSteps := 50
 	timeStep := 0.2
 	measurementNoise := 0.7 // Standard deviation of measurement noise
-	
-	fmt.Println("Time\tTrue\tNoisy\tKalman\tError")
-	fmt.Println("----\t----\t-----\t------\t-----")
-	
+
+	fmt.Printf("%-8s %-8s %-8s %-8s %-8s\n", "Time", "True", "Noisy", "Kalman", "Error")
+	fmt.Printf("%-8s %-8s %-8s %-8s %-8s\n", "----", "----", "-----", "------", "-----")
+
 	var totalError, totalKalmanError float64
-	
+	warmupSteps := 5
+
 	for i := 0; i < numSteps; i++ {
 		t := float64(i) * timeStep
-		
+
 		// Generate true signal value
 		trueValue := trueSignal(t)
-		
+
 		// Create noisy measurement
 		noisyMeasurement := simulateNoisyMeasurement(trueValue, measurementNoise)
-		
+
 		// Apply Kalman filter
 		kalmanEstimate := kf.Estimate(noisyMeasurement)
-		
+
 		// Calculate errors
 		measurementError := math.Abs(noisyMeasurement - trueValue)
 		kalmanError := math.Abs(kalmanEstimate - trueValue)
-		
-		totalError += measurementError
-		totalKalmanError += kalmanError
-		
+
+		if i >= warmupSteps {
+			totalError += measurementError
+			totalKalmanError += kalmanError
+		}
+
 		// Print results every 5 steps
 		if i%5 == 0 || i == numSteps-1 {
-			fmt.Printf("%.1f\t%.2f\t%.2f\t%.2f\t%.2f\n", 
+			fmt.Printf("%-8.1f %-8.2f %-8.2f %-8.2f %-8.2f\n",
 				t, trueValue, noisyMeasurement, kalmanEstimate, kalmanError)
 		}
 	}
-	
+
 	fmt.Println()
 	fmt.Println("Performance Summary:")
 	fmt.Println("===================")
-	
-	avgMeasurementError := totalError / float64(numSteps)
-	avgKalmanError := totalKalmanError / float64(numSteps)
-	improvementPercent := ((avgMeasurementError - avgKalmanError) / avgMeasurementError) * 100
-	
+
+	effectiveSteps := float64(numSteps - warmupSteps)
+	avgMeasurementError := totalError / effectiveSteps
+	avgKalmanError := totalKalmanError / effectiveSteps
+	errorChangePercent := ((avgKalmanError - avgMeasurementError) / avgMeasurementError) * 100
+
+	fmt.Printf("Metrics exclude first %d warmup samples\n", warmupSteps)
 	fmt.Printf("Average Measurement Error: %.3f\n", avgMeasurementError)
 	fmt.Printf("Average Kalman Error:      %.3f\n", avgKalmanError)
-	fmt.Printf("Error Reduction:           %.1f%%\n", improvementPercent)
-	
+	if errorChangePercent <= 0 {
+		fmt.Printf("Error Reduction:           %.1f%%\n", -errorChangePercent)
+	} else {
+		fmt.Printf("Error Increase:            %.1f%%\n", errorChangePercent)
+	}
+
 	fmt.Println()
 	fmt.Println("Filter Details:")
 	fmt.Println("==============")
 	fmt.Printf("Final State Estimate: %.3f\n", kf.GetX())
 	fmt.Printf("Kalman Gain:          %.4f\n", kf.GetK())
 	fmt.Printf("Error Covariance:     %.4f\n", kf.GetP())
-	
+
 	fmt.Println()
 	fmt.Println("How it works:")
 	fmt.Println("============")
@@ -104,7 +114,7 @@ func main() {
 	fmt.Println("2. Measurement Update: Combines prediction with noisy measurement using Kalman gain")
 	fmt.Println("3. DARE Solution: Automatically calculates optimal Kalman gain for given noise levels")
 	fmt.Println("4. Adaptive Filtering: Balances between trusting the model vs. measurements")
-	
+
 	fmt.Println()
 	fmt.Println("Key Parameters:")
 	fmt.Println("==============")

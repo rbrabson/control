@@ -309,35 +309,35 @@ func BenchmarkKalmanFilter(b *testing.B) {
 // TestLowPassFilter tests the LowPassFilter functionality
 func TestLowPassFilter(t *testing.T) {
 	t.Run("Constructor validation", func(t *testing.T) {
-		// Test invalid gains
+		// Test invalid alphas
 		_, err := NewLowPassFilter(0.0)
 		if err == nil {
-			t.Error("Expected error for gain = 0.0")
+			t.Error("Expected error for alpha = 0.0")
 		}
 
 		_, err = NewLowPassFilter(1.0)
 		if err == nil {
-			t.Error("Expected error for gain = 1.0")
+			t.Error("Expected error for alpha = 1.0")
 		}
 
 		_, err = NewLowPassFilter(-0.1)
 		if err == nil {
-			t.Error("Expected error for negative gain")
+			t.Error("Expected error for negative alpha")
 		}
 
 		_, err = NewLowPassFilter(1.1)
 		if err == nil {
-			t.Error("Expected error for gain > 1")
+			t.Error("Expected error for alpha > 1")
 		}
 
-		// Test valid gain
+		// Test valid alpha
 		lpf, err := NewLowPassFilter(0.5)
 		if err != nil {
-			t.Fatalf("Expected no error for valid gain, got %v", err)
+			t.Fatalf("Expected no error for valid alpha, got %v", err)
 		}
 
-		if lpf.GetGain() != 0.5 {
-			t.Errorf("Expected gain = 0.5, got %f", lpf.GetGain())
+		if lpf.GetAlpha() != 0.5 {
+			t.Errorf("Expected alpha = 0.5, got %f", lpf.GetAlpha())
 		}
 
 		if lpf.IsInitialized() {
@@ -382,7 +382,7 @@ func TestLowPassFilter(t *testing.T) {
 	})
 
 	t.Run("Filtering behavior", func(t *testing.T) {
-		lpf, err := NewLowPassFilter(0.9) // High gain = more smoothing
+		lpf, err := NewLowPassFilter(0.9) // High alpha = more smoothing
 		if err != nil {
 			t.Fatalf("Failed to create LowPass filter: %v", err)
 		}
@@ -393,7 +393,7 @@ func TestLowPassFilter(t *testing.T) {
 		// Apply step change
 		estimate := lpf.Estimate(10.0)
 
-		// With high gain (0.9), should be smoothed
+		// With high alpha (0.9), should be smoothed
 		// estimate = 0.9 * 0.0 + 0.1 * 10.0 = 1.0
 		expected := 0.9*0.0 + 0.1*10.0
 		if math.Abs(estimate-expected) > 0.001 {
@@ -409,66 +409,66 @@ func TestLowPassFilter(t *testing.T) {
 		}
 	})
 
-	t.Run("Low vs high gain comparison", func(t *testing.T) {
-		lpfLowGain, _ := NewLowPassFilter(0.1)  // Low gain = less smoothing, faster response
-		lpfHighGain, _ := NewLowPassFilter(0.9) // High gain = more smoothing, slower response
+	t.Run("Low vs high alpha comparison", func(t *testing.T) {
+		lpfLowAlpha, _ := NewLowPassFilter(0.1)  // Low alpha = less smoothing, faster response
+		lpfHighAlpha, _ := NewLowPassFilter(0.9) // High alpha = more smoothing, slower response
 
 		// Initialize both with 0
-		lpfLowGain.Estimate(0.0)
-		lpfHighGain.Estimate(0.0)
+		lpfLowAlpha.Estimate(0.0)
+		lpfHighAlpha.Estimate(0.0)
 
 		// Apply same step input
-		lowEstimate := lpfLowGain.Estimate(10.0)
-		highEstimate := lpfHighGain.Estimate(10.0)
+		lowEstimate := lpfLowAlpha.Estimate(10.0)
+		highEstimate := lpfHighAlpha.Estimate(10.0)
 
-		// Low gain should respond faster (higher estimate)
+		// Low alpha should respond faster (higher estimate)
 		if lowEstimate <= highEstimate {
-			t.Errorf("Low gain filter should respond faster: low=%f, high=%f", lowEstimate, highEstimate)
+			t.Errorf("Low alpha filter should respond faster: low=%f, high=%f", lowEstimate, highEstimate)
 		}
 
-		// Low gain: 0.1 * 0 + 0.9 * 10 = 9.0
+		// Low alpha: 0.1 * 0 + 0.9 * 10 = 9.0
 		expectedLow := 0.1*0.0 + 0.9*10.0
 		if math.Abs(lowEstimate-expectedLow) > 0.001 {
-			t.Errorf("Expected low gain estimate %f, got %f", expectedLow, lowEstimate)
+			t.Errorf("Expected low alpha estimate %f, got %f", expectedLow, lowEstimate)
 		}
 
-		// High gain: 0.9 * 0 + 0.1 * 10 = 1.0
+		// High alpha: 0.9 * 0 + 0.1 * 10 = 1.0
 		expectedHigh := 0.9*0.0 + 0.1*10.0
 		if math.Abs(highEstimate-expectedHigh) > 0.001 {
-			t.Errorf("Expected high gain estimate %f, got %f", expectedHigh, highEstimate)
+			t.Errorf("Expected high alpha estimate %f, got %f", expectedHigh, highEstimate)
 		}
 	})
 
-	t.Run("SetGain functionality", func(t *testing.T) {
+	t.Run("SetAlpha functionality", func(t *testing.T) {
 		lpf, err := NewLowPassFilter(0.5)
 		if err != nil {
 			t.Fatalf("Failed to create LowPass filter: %v", err)
 		}
 
-		// Test valid gain change
-		err = lpf.SetGain(0.8)
+		// Test valid alpha change
+		err = lpf.SetAlpha(0.8)
 		if err != nil {
-			t.Errorf("Expected no error for valid gain change: %v", err)
+			t.Errorf("Expected no error for valid alpha change: %v", err)
 		}
 
-		if lpf.GetGain() != 0.8 {
-			t.Errorf("Expected gain = 0.8, got %f", lpf.GetGain())
+		if lpf.GetAlpha() != 0.8 {
+			t.Errorf("Expected alpha = 0.8, got %f", lpf.GetAlpha())
 		}
 
-		// Test invalid gain changes
-		err = lpf.SetGain(0.0)
+		// Test invalid alpha changes
+		err = lpf.SetAlpha(0.0)
 		if err == nil {
-			t.Error("Expected error for gain = 0.0")
+			t.Error("Expected error for alpha = 0.0")
 		}
 
-		err = lpf.SetGain(1.0)
+		err = lpf.SetAlpha(1.0)
 		if err == nil {
-			t.Error("Expected error for gain = 1.0")
+			t.Error("Expected error for alpha = 1.0")
 		}
 
-		// Gain should remain unchanged after invalid attempts
-		if lpf.GetGain() != 0.8 {
-			t.Errorf("Gain should remain 0.8 after invalid attempts, got %f", lpf.GetGain())
+		// Alpha should remain unchanged after invalid attempts
+		if lpf.GetAlpha() != 0.8 {
+			t.Errorf("Alpha should remain 0.8 after invalid attempts, got %f", lpf.GetAlpha())
 		}
 	})
 

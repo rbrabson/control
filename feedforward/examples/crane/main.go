@@ -1,107 +1,108 @@
+// Package main demonstrates crane feed-forward with combined compensations.
+//
+// This example shows how to use both gravity and cosine compensation
+// together for systems like crane booms that rotate and lift loads.
 package main
 
 import (
 	"fmt"
 	"math"
-	"time"
 
 	"control/feedforward"
 )
 
-// CombinedControlExample demonstrates a complex system using both gravity
-// and cosine compensation, such as a crane or construction equipment.
 func main() {
-	fmt.Println("=== Combined Feedforward Control Example ===")
-	fmt.Println("Simulating crane boom control with both gravity and cosine compensation")
+	fmt.Println("Crane Feed-Forward Example (Combined Compensation)")
+	fmt.Println("=================================================")
 	fmt.Println()
 
-	// Create feedforward controller with both compensations
-	// This simulates a crane boom that rotates and lifts
-	ff := feedforward.New(
-		0.08,                              // kS: static gain (bearing friction)
-		1.5,                               // kV: velocity gain (higher for heavy machinery)
+	fmt.Println("Combined Gravity and Cosine Compensation")
+	fmt.Println("---------------------------------------")
+	fmt.Println("Combines both gravity and cosine terms for")
+	fmt.Println("systems that rotate AND lift (like crane booms).")
+	fmt.Println()
+
+	// Create controller with BOTH compensations
+	ffCombined := feedforward.New(
+		0.08,                              // kS: static friction
+		1.5,                               // kV: velocity gain
 		0.12,                              // kA: acceleration gain
-		feedforward.WithGravityGain(15.7), // Heavy load gravity compensation
-		feedforward.WithCosineGain(8.2),   // Boom angle compensation
+		feedforward.WithGravityGain(15.0), // kG: heavy load
+		feedforward.WithCosineGain(8.0),   // kCos: boom angle
 	)
 
-	// Also create a basic feedforward for comparison
+	// Create basic controller for comparison
 	ffBasic := feedforward.New(0.08, 1.5, 0.12)
 
-	// Simulate crane operations
-	operations := []struct {
-		name       string
-		startAngle float64
-		endAngle   float64
-		duration   float64
+	fmt.Println("Combined Controller Configuration:")
+	fmt.Printf("  kS = %.2f (static friction)\n", 0.08)
+	fmt.Printf("  kV = %.1f (velocity gain)\n", 1.5)
+	fmt.Printf("  kA = %.2f (acceleration gain)\n", 0.12)
+	fmt.Printf("  kG = %.1f (gravity)\n", 15.0)
+	fmt.Printf("  kCos = %.1f (cosine)\n\n", 8.0)
+
+	// Test at different boom angles
+	fmt.Println("Test: Boom Positions with Constant Motion")
+	fmt.Println("(velocity = 1.0, acceleration = 0.5)")
+	fmt.Printf("\n%-10s %-10s %-10s %-10s %-10s %-10s\n", "Angle", "Position", "Cos(θ)", "Basic", "Combined", "Diff")
+	fmt.Printf("%-10s %-10s %-10s %-10s %-10s %-10s\n", "-----", "--------", "------", "-----", "--------", "----")
+
+	angles := []struct {
+		name  string
+		angle float64
 	}{
-		{"Raise boom from horizontal", 0.0, math.Pi / 3, 4.0},
-		{"Lower to mid position", math.Pi / 3, math.Pi / 6, 2.5},
-		{"Raise to near vertical", math.Pi / 6, math.Pi * 0.45, 3.5},
+		{"0°", 0.0},
+		{"30°", math.Pi / 6},
+		{"45°", math.Pi / 4},
+		{"60°", math.Pi / 3},
+		{"90°", math.Pi / 2},
 	}
 
-	fmt.Printf("%-6s %-25s %-8s %-8s %-8s %-10s %-10s %-10s\n",
-		"Time", "Operation", "Angle°", "Vel", "Accel", "FF Basic", "FF Comb.", "Diff")
-	fmt.Println("------------------------------------------------------------------------------")
+	velocity := 1.0
+	accel := 0.5
 
-	timeStep := 0.25
-	for _, op := range operations {
-		fmt.Printf("\n%s...\n", op.name)
+	for _, a := range angles {
+		outputBasic := ffBasic.Calculate(a.angle, velocity, accel)
+		outputCombined := ffCombined.Calculate(a.angle, velocity, accel)
+		diff := outputCombined - outputBasic
+		cosValue := math.Cos(a.angle)
+		angleDeg := a.angle * 180.0 / math.Pi
 
-		for t := 0.0; t <= op.duration; t += timeStep {
-			// Smooth S-curve motion profile
-			normalizedTime := t / op.duration
-			var s, v, a float64
-
-			// S-curve with smooth acceleration
-			if normalizedTime < 0.25 {
-				// Smooth start
-				eta := 4 * normalizedTime
-				s = (eta * eta) / 8.0
-				v = eta / (2.0 * op.duration)
-				a = 2.0 / (op.duration * op.duration)
-			} else if normalizedTime < 0.75 {
-				// Constant velocity
-				s = 0.125 + (normalizedTime-0.25)*0.5
-				v = 2.0 / op.duration
-				a = 0.0
-			} else {
-				// Smooth stop
-				eta := 4 * (1 - normalizedTime)
-				s = 1.0 - (eta*eta)/8.0
-				v = eta / (2.0 * op.duration)
-				a = -2.0 / (op.duration * op.duration)
-			}
-
-			angleDiff := op.endAngle - op.startAngle
-			angle := op.startAngle + s*angleDiff
-			angularVel := v * angleDiff
-			angularAccel := a * angleDiff
-
-			// Calculate both feedforward outputs
-			ffBasicOutput := ffBasic.Calculate(angle, angularVel, angularAccel)
-			ffCombinedOutput := ff.Calculate(angle, angularVel, angularAccel)
-			difference := ffCombinedOutput - ffBasicOutput
-
-			// Convert to degrees for display
-			angleDeg := angle * 180.0 / math.Pi
-
-			fmt.Printf("%-6.1f %-25s %-8.1f %-8.3f %-8.3f %-10.3f %-10.3f %-10.3f\n",
-				t, "", angleDeg, angularVel, angularAccel,
-				ffBasicOutput, ffCombinedOutput, difference)
-
-			time.Sleep(120 * time.Millisecond)
-		}
+		fmt.Printf("%-10s %-10.0f %-10.3f %-10.3f %-10.3f %-10.3f\n",
+			a.name, angleDeg, cosValue, outputBasic, outputCombined, diff)
 	}
 
-	fmt.Println("\n=== Analysis ===")
-	fmt.Println("Combined compensation provides:")
-	fmt.Println("- Gravity compensation: Constant upward force for load support")
-	fmt.Println("- Cosine compensation: Variable torque based on boom angle")
-	fmt.Println("- At horizontal (0°): Maximum cosine effect + full gravity")
-	fmt.Println("- At vertical (90°): No cosine effect + full gravity")
-	fmt.Println("- Significantly higher control effort than basic feedforward")
-	fmt.Printf("- Gravity component: %.1f units\n", 15.7)
-	fmt.Printf("- Max cosine component: %.1f units (at 0°)\n", 8.2)
-	fmt.Printf("- Min cosine component: %.1f units (at 90°)\n", 8.2*math.Cos(math.Pi/2))
+	// Detailed breakdown
+	fmt.Println("\nDetailed Breakdown:")
+	fmt.Println("------------------")
+
+	fmt.Println("\nAt 0° (Horizontal):")
+	output0 := ffCombined.Calculate(0.0, velocity, accel)
+	fmt.Printf("  Output = kV*v + kA*a + kG + kCos*cos(0°)\n")
+	fmt.Printf("  Output = %.1f*%.1f + %.2f*%.1f + %.1f + %.1f*%.1f\n",
+		1.5, velocity, 0.12, accel, 15.0, 8.0, 1.0)
+	fmt.Printf("  Output = %.1f + %.2f + %.1f + %.1f = %.3f\n",
+		1.5*velocity, 0.12*accel, 15.0, 8.0*1.0, output0)
+	fmt.Println("  (Maximum compensation: both terms contribute)")
+
+	fmt.Println("\nAt 90° (Vertical):")
+	output90 := ffCombined.Calculate(math.Pi/2, velocity, accel)
+	fmt.Printf("  Output = kV*v + kA*a + kG + kCos*cos(90°)\n")
+	fmt.Printf("  Output = %.1f*%.1f + %.2f*%.1f + %.1f + %.1f*%.4f\n",
+		1.5, velocity, 0.12, accel, 15.0, 8.0, math.Cos(math.Pi/2))
+	fmt.Printf("  Output = %.1f + %.2f + %.1f + %.4f = %.3f\n",
+		1.5*velocity, 0.12*accel, 15.0, 8.0*math.Cos(math.Pi/2), output90)
+	fmt.Println("  (Only gravity compensates, cosine term is zero)")
+
+	fmt.Println("\nComparison Summary:")
+	fmt.Println("------------------")
+	fmt.Println("Basic controller:")
+	fmt.Printf("  Output = %.1f*v + %.2f*a\n", 1.5, 0.12)
+	fmt.Println("\nCombined controller:")
+	fmt.Printf("  Output = %.1f*v + %.2f*a + %.1f + %.1f*cos(θ)\n", 1.5, 0.12, 15.0, 8.0)
+	fmt.Println("\nKey Points:")
+	fmt.Println("• Gravity term: constant upward force")
+	fmt.Println("• Cosine term: varies with boom angle")
+	fmt.Println("• Both terms add together for full compensation")
+	fmt.Println("• Combined approach handles complex mechanisms")
 }

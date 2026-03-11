@@ -89,8 +89,8 @@ func main() {
 	// Demonstrate coefficient lookup at various arm positions with single controller
 	fmt.Println("\nAdaptive PID Coefficient Lookup Demonstration (Single Controller):")
 	fmt.Println("==================================================================")
-	fmt.Println("Arm Angle | Kp    | Ki   | Kd   | Gains Changed | Reset | Notes")
-	fmt.Println("----------|-------|------|------|---------------|-------|-------------------")
+	fmt.Printf("%-10s %-7s %-6s %-6s %-14s %-7s %-20s\n", "Arm Angle", "Kp", "Ki", "Kd", "Gains Changed", "Reset", "Notes")
+	fmt.Printf("%-10s %-7s %-6s %-6s %-14s %-7s %-20s\n", "---------", "--", "--", "--", "-------------", "-----", "-----")
 
 	testPositions := []struct {
 		angle float64
@@ -152,15 +152,15 @@ func main() {
 			changedStr = "Yes"
 		}
 
-		fmt.Printf("  %6.1f° | %5.2f | %4.2f | %4.2f |      %3s      |  %3s  | %s\n",
+		fmt.Printf("%-10.1f %-7.2f %-6.2f %-6.2f %-14s %-7s %-20s\n",
 			pos.angle, Kp, Ki, Kd, changedStr, reset, pos.notes)
 	}
 
 	// Demonstrate how control output varies with same error using single controller
 	fmt.Println("\nControl Output Comparison (same 10° error, single adaptive controller):")
 	fmt.Println("======================================================================")
-	fmt.Println("Position | Error | Kp    | Ki   | Kd   | Output | Notes")
-	fmt.Println("---------|-------|-------|------|------|--------|---------------------------")
+	fmt.Printf("%-10s %-8s %-7s %-6s %-6s %-8s %-27s\n", "Position", "Error", "Kp", "Ki", "Kd", "Output", "Notes")
+	fmt.Printf("%-10s %-8s %-7s %-6s %-6s %-8s %-27s\n", "--------", "-----", "--", "--", "--", "------", "-----")
 
 	testError := 10.0 // 10 degree position error
 	for _, pos := range testPositions {
@@ -176,15 +176,15 @@ func main() {
 		// Calculate control output for the same error at different positions
 		output := controller.Calculate(pos.angle+testError, pos.angle)
 
-		fmt.Printf(" %6.1f° | %5.1f° | %5.2f | %4.2f | %4.2f | %6.2f | %s\n",
+		fmt.Printf("%-10.1f %-8.1f %-7.2f %-6.2f %-6.2f %-8.2f %-27s\n",
 			pos.angle, testError, Kp, Ki, Kd, output, pos.notes)
 	}
 
 	// Show smooth coefficient transitions
 	fmt.Println("\nSmooth Coefficient Transitions (0° to 180°):")
 	fmt.Println("============================================")
-	fmt.Println("Angle | Kp    | Ki   | Kd   | Transition")
-	fmt.Println("------|-------|------|------|--------------------")
+	fmt.Printf("%-8s %-7s %-6s %-6s %-20s\n", "Angle", "Kp", "Ki", "Kd", "Transition")
+	fmt.Printf("%-8s %-7s %-6s %-6s %-20s\n", "-----", "--", "--", "--", "----------")
 
 	for angle := 0.0; angle <= 180.0; angle += 15.0 {
 		Kp, _ := pCoefficients.Get(angle)
@@ -201,15 +201,15 @@ func main() {
 			transition = "smooth"
 		}
 
-		fmt.Printf("%5.0f° | %5.2f | %4.2f | %4.2f | %s\n",
+		fmt.Printf("%-8.0f %-7.2f %-6.2f %-6.2f %-20s\n",
 			angle, Kp, Ki, Kd, transition)
 	}
 
 	// Demonstrate controller reuse in a simulated control loop
 	fmt.Println("\nSimulated Control Loop (Single Controller, Dynamic Gains):")
 	fmt.Println("=========================================================")
-	fmt.Println("Step | Arm Pos | Target | Kp    | Ki   | Kd   | Reset | Output")
-	fmt.Println("-----|---------|--------|-------|------|------|-------|--------")
+	fmt.Printf("%-6s %-8s %-8s %-7s %-6s %-6s %-7s %-8s\n", "Step", "Arm Pos", "Target", "Kp", "Ki", "Kd", "Reset", "Output")
+	fmt.Printf("%-6s %-8s %-8s %-7s %-6s %-6s %-7s %-8s\n", "----", "-------", "------", "--", "--", "--", "-----", "------")
 
 	// Simulate arm moving from 0° to 90° over several control steps
 	armPositions := []float64{0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0}
@@ -242,7 +242,7 @@ func main() {
 		// Calculate control output
 		output := controller.Calculate(target, armPos)
 
-		fmt.Printf("  %2d  |  %5.1f° |  %5.1f° | %5.2f | %4.2f | %4.2f |   %3s | %7.2f\n",
+		fmt.Printf("%-6d %-8.1f %-8.1f %-7.2f %-6.2f %-6.2f %-7s %-8.2f\n",
 			step+1, armPos, target, Kp, Ki, Kd, reset, output)
 	}
 

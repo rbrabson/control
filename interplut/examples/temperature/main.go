@@ -30,8 +30,8 @@ func main() {
 	}
 
 	fmt.Println("\nTemperature to Power Mapping:")
-	fmt.Println("Temperature (°C) | Power (%) | Notes")
-	fmt.Println("-----------------|-----------|--------")
+	fmt.Printf("%-18s %-10s %-28s\n", "Temperature (°C)", "Power (%)", "Notes")
+	fmt.Printf("%-18s %-10s %-28s\n", "-----------------", "---------", "-----")
 
 	// Test at various temperatures
 	temperatures := []struct {
@@ -52,11 +52,13 @@ func main() {
 			fmt.Printf("Error at %.1f°C: %v\n", t.temp, err)
 			continue
 		}
-		fmt.Printf("      %.1f       |   %.3f   | %s\n", t.temp, power, t.notes)
+		fmt.Printf("%-18.1f %-10.3f %-28s\n", t.temp, power, t.notes)
 	}
 
 	// Show smooth curve by sampling many points
 	fmt.Println("\nTemperature response curve (every 20°C):")
+	fmt.Printf("%-8s %-40s %-8s\n", "Temp", "Response", "Power")
+	fmt.Printf("%-8s %-40s %-8s\n", "----", "--------", "-----")
 	for temp := 20.0; temp <= 250.0; temp += 20.0 {
 		power, _ := lut.Get(temp)
 		// Create simple ASCII bar chart
@@ -65,7 +67,7 @@ func main() {
 		for i := 0; i < barLength; i++ {
 			bar += "█"
 		}
-		fmt.Printf("%3.0f°C |%-40s| %.3f\n", temp, bar, power)
+		fmt.Printf("%-8.0f %-40s %-8.3f\n", temp, bar, power)
 	}
 
 	// Compare with simple linear approach

@@ -132,17 +132,42 @@ func WithDampening(ka, kv, po float64) Option {
 	}
 }
 
-// Calculate computes the PID output for the given reference (setpoint) and current state (measurement)
+// Calculate computes the PID output for the given reference (setpoint) and current state (measurement).
+// This method uses real elapsed time (via time.Now()) to calculate dt.
 func (p *PID) Calculate(reference, state float64) float64 {
 	now := time.Now()
 	error := reference - state
 
-	// Initialize on first call
+	// Initialize on first call and return 0
 	if !p.initialized {
 		p.integral = 0
 		p.lastReference = reference
 		p.lastError = error
 		p.prevTime = now
+		p.initialized = true
+		return 0
+	}
+
+	dt := now.Sub(p.prevTime).Seconds()
+	p.prevTime = now
+
+	return p.CalculateWithDt(reference, state, dt)
+}
+
+// CalculateWithDt computes the PID output for the given reference, current state, and explicit time delta.
+// This method is intended for simulation use where you want to specify the time step explicitly
+// rather than relying on real elapsed time. The method computes the proportional, integral, and
+// derivative terms based on the error between the reference and state, and applies any configured
+// feedforward, stability threshold, integral sum limits, and output limits.
+func (p *PID) CalculateWithDt(reference, state, dt float64) float64 {
+	error := reference - state
+
+	// CalculateWithDt requires the controller to be initialized first via Calculate()
+	// or by manually setting the initialized flag
+	if !p.initialized {
+		p.integral = 0
+		p.lastReference = reference
+		p.lastError = error
 		p.initialized = true
 	}
 
@@ -151,9 +176,6 @@ func (p *PID) Calculate(reference, state float64) float64 {
 		p.integral = 0
 		p.lastReference = reference
 	}
-
-	// Calculate time delta
-	dt := now.Sub(p.prevTime).Seconds()
 
 	// Calculate PID terms
 	proportional := p.calculateProportional(error)
@@ -173,7 +195,6 @@ func (p *PID) Calculate(reference, state float64) float64 {
 
 	// Store values for next iteration
 	p.lastError = error
-	p.prevTime = now
 
 	return clampedOutput
 }

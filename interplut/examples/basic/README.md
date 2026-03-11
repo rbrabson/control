@@ -1,15 +1,13 @@
-# Basic Shooter Velocity Mapping Example
+# InterpLUT Basic Example
 
-This example demonstrates how to use interpolating lookup tables (InterpLUT) for smooth velocity mapping in robotic shooters or similar systems.
+This example demonstrates that InterpLUT returns exact values at control points, matching the behavior tested in the Java implementation.
 
 ## What This Example Shows
 
-- Creating smooth interpolation tables with cubic splines
-- Mapping input (distance) to output (velocity)
-- Achieving exact values at control points
-- Smooth interpolation between discrete settings
-- Error handling for out-of-bounds inputs
-- Practical robotics application
+- Creating an interpolated lookup table with control points
+- Exact value returns at control points
+- Smooth interpolation between points
+- Simple, focused demonstration of core functionality
 
 ## Running the Example
 
@@ -20,33 +18,41 @@ go run main.go
 
 ## Key Learning Points
 
-### Interpolation Fundamentals
+### Core Functionality
 
 The example demonstrates:
 
-- **Control Points**: Discrete input-output pairs you define
-- **Smooth Interpolation**: Filling in values between control points
-- **Cubic Splines**: Smooth curve fitting without oscillation
-- **Exact Matching**: Output exactly matches control points
-- **Monotonicity**: Preserving increasing/decreasing behavior
+- **Control Points**: Define input-output pairs
+- **Exact Matching**: Returns exact values at control points (within floating-point precision)
+- **Interpolation**: Smooth values between control points
+- **Error Handling**: Proper error checking
 
-### Shooter Velocity Mapping
+### Interpolation Fundamentals
 
-In robotic shooters:
+InterpLUT uses cubic spline interpolation:
 
-- Shooting distance varies (different field positions)
-- Different distances require different velocities
-- Manual tuning for each distance is tedious
-- Interpolation allows smooth velocity variation
-- Eliminates need for discrete velocity settings
+- Creates smooth curves through control points
+- Guarantees passing through each control point exactly
+- Maintains monotonicity if control points are monotonic
+- No oscillation between points
 
 ## Output Interpretation
 
 The example displays:
 
-- **Distance (m)**: Target distance in meters
-- **Velocity (%)**: Required shooter speed as percentage or units
-- **Accuracy**: How close to expected values at control points
+- **Exact Control Point Returns**: Verifies that querying at control points returns exact values
+- **Interpolated Values**: Shows smooth interpolation between points
+- **Match Indicators**: Visual confirmation of exact matches (✓/✗)
+
+## Use Cases
+
+Interpolated lookup tables are useful for:
+
+- Feedforward control (e.g., voltage vs. velocity)
+- Nonlinear mappings (e.g., sensor calibration)
+- Shooter velocity tables (distance to power)
+- Elevator position to voltage mappings
+- Any scenario requiring smooth value lookups
 
 ## System Parameters
 

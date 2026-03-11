@@ -1,111 +1,94 @@
+// Package main demonstrates robotic arm feed-forward with cosine compensation.
+//
+// This example shows how cosine compensation handles varying gravitational
+// torque as the arm rotates through different angles.
 package main
 
 import (
 	"fmt"
 	"math"
-	"time"
 
 	"control/feedforward"
 )
 
-// RoboticArmExample demonstrates feedforward control for a rotating robotic arm
-// with cosine compensation to handle gravitational effects at different angles.
 func main() {
-	fmt.Println("=== Robotic Arm Feedforward Control Example ===")
-	fmt.Println("Simulating robotic arm control with cosine compensation")
+	fmt.Println("Robotic Arm Feed-Forward Example")
+	fmt.Println("================================")
 	fmt.Println()
 
-	// Create feedforward controller with cosine compensation
-	// The cosine gain compensates for varying gravitational torque
+	fmt.Println("Cosine Compensation for Rotating Arms")
+	fmt.Println("-------------------------------------")
+	fmt.Println("Cosine term compensates for varying gravitational")
+	fmt.Println("torque as arm angle changes.")
+	fmt.Println()
+
+	// Create controller with cosine compensation
 	ff := feedforward.New(
-		0.02,                            // kS: static gain (friction)
+		0.02,                            // kS: static friction
 		0.5,                             // kV: velocity gain
 		0.03,                            // kA: acceleration gain
-		feedforward.WithCosineGain(2.5), // Cosine compensation for gravity
+		feedforward.WithCosineGain(2.5), // kCos: gravity compensation
 	)
 
-	// Simulate arm movement through different positions
-	targetPositions := []struct {
+	fmt.Println("Controller Configuration:")
+	fmt.Printf("  kS = %.2f (static friction)\n", 0.02)
+	fmt.Printf("  kV = %.1f (velocity gain)\n", 0.5)
+	fmt.Printf("  kA = %.2f (acceleration gain)\n", 0.03)
+	fmt.Printf("  kCos = %.1f (cosine compensation)\n\n", 2.5)
+
+	// Test at key arm positions with constant motion
+	fmt.Println("Test: Arm Positions with Constant Motion")
+	fmt.Println("(velocity = 1.0, acceleration = 0.5)")
+	fmt.Printf("\n%-18s %-8s %-10s %-10s\n", "Position", "Angle", "Cos(θ)", "Output")
+	fmt.Printf("%-18s %-8s %-10s %-10s\n", "--------", "-----", "------", "------")
+
+	positions := []struct {
 		name  string
-		angle float64 // radians
+		angle float64
 	}{
-		{"Horizontal Right", 0.0},
+		{"Horizontal", 0.0},
 		{"45° Up", math.Pi / 4},
-		{"Vertical Up", math.Pi / 2},
-		{"135° Up", 3 * math.Pi / 4},
+		{"Vertical", math.Pi / 2},
+		{"135°", 3 * math.Pi / 4},
 		{"Horizontal Left", math.Pi},
 	}
 
-	fmt.Printf("%-8s %-15s %-12s %-12s %-12s %-12s %-12s\n",
-		"Time", "Position", "Angle", "Velocity", "Accel", "Cos(θ)", "FF Output")
-	fmt.Println("--------------------------------------------------------------------------------")
+	velocity := 1.0
+	accel := 0.5
 
-	timeStep := 0.15
-	for i := 0; i < len(targetPositions)-1; i++ {
-		startAngle := targetPositions[i].angle
-		endAngle := targetPositions[i+1].angle
+	for _, pos := range positions {
+		output := ff.Calculate(pos.angle, velocity, accel)
+		cosValue := math.Cos(pos.angle)
+		angleDeg := pos.angle * 180.0 / math.Pi
 
-		// Handle angle wrapping
-		angleDiff := endAngle - startAngle
-		if angleDiff > math.Pi {
-			angleDiff -= 2 * math.Pi
-		} else if angleDiff < -math.Pi {
-			angleDiff += 2 * math.Pi
-		}
-
-		moveTime := 2.0 // seconds
-		fmt.Printf("Moving from %s to %s...\n",
-			targetPositions[i].name, targetPositions[i+1].name)
-
-		for t := 0.0; t <= moveTime; t += timeStep {
-			// Smooth trapezoidal motion profile
-			normalizedTime := t / moveTime
-			var s, v, a float64
-
-			accelTime := 0.3 // 30% of move time for acceleration
-			decelTime := 0.7 // start deceleration at 70% of move time
-
-			if normalizedTime <= accelTime {
-				// Acceleration phase
-				s = 0.5 * (normalizedTime / accelTime) * (normalizedTime / accelTime)
-				v = normalizedTime / (accelTime * moveTime)
-				a = 1.0 / (accelTime * moveTime * moveTime)
-			} else if normalizedTime <= decelTime {
-				// Constant velocity phase
-				s = 0.5*accelTime + (normalizedTime-accelTime)/accelTime*0.5
-				v = 1.0 / (accelTime * moveTime)
-				a = 0.0
-			} else {
-				// Deceleration phase
-				remaining := (1.0 - normalizedTime) / (1.0 - decelTime)
-				s = 1.0 - 0.5*remaining*remaining*(1.0-decelTime)
-				v = remaining / ((1.0 - decelTime) * moveTime)
-				a = -1.0 / ((1.0 - decelTime) * moveTime * moveTime)
-			}
-
-			angle := startAngle + s*angleDiff
-			angularVel := v * angleDiff
-			angularAccel := a * angleDiff
-
-			// Calculate feedforward output (includes cosine compensation)
-			ffOutput := ff.Calculate(angle, angularVel, angularAccel)
-			cosValue := math.Cos(angle)
-
-			// Convert angle to degrees for display
-			angleDeg := angle * 180.0 / math.Pi
-
-			fmt.Printf("%-8.1f %-15s %-12.1f %-12.3f %-12.3f %-12.3f %-12.3f\n",
-				t, fmt.Sprintf("%.1f°", angleDeg), angle, angularVel, angularAccel, cosValue, ffOutput)
-
-			time.Sleep(80 * time.Millisecond)
-		}
-		fmt.Println()
+		fmt.Printf("%-18s %-8.0f %-10.3f %-10.3f\n",
+			pos.name, angleDeg, cosValue, output)
 	}
 
-	fmt.Println("=== Analysis ===")
-	fmt.Println("Cosine compensation provides:")
-	fmt.Println("- Maximum torque at horizontal position (cos(0°) = 1.0)")
-	fmt.Println("- Zero torque at vertical positions (cos(90°) = 0.0)")
-	fmt.Println("- Smooth torque variation following cos(θ) profile")
-	fmt.Println("- Compensates for arm weight at different angles")
+	// Detailed breakdown
+	fmt.Println("\nDetailed Breakdown:")
+	fmt.Println("------------------")
+
+	fmt.Println("\nAt Horizontal (0°):")
+	output0 := ff.Calculate(0.0, velocity, accel)
+	fmt.Printf("  Output = kV*v + kA*a + kCos*cos(0°)\n")
+	fmt.Printf("  Output = %.2f*%.1f + %.2f*%.1f + %.1f*%.1f\n",
+		0.5, velocity, 0.03, accel, 2.5, 1.0)
+	fmt.Printf("  Output = %.2f + %.2f + %.1f = %.3f\n",
+		0.5*velocity, 0.03*accel, 2.5*1.0, output0)
+
+	fmt.Println("\nAt Vertical (90°):")
+	outputPi2 := ff.Calculate(math.Pi/2, velocity, accel)
+	fmt.Printf("  Output = kV*v + kA*a + kCos*cos(90°)\n")
+	fmt.Printf("  Output = %.2f*%.1f + %.2f*%.1f + %.1f*%.4f\n",
+		0.5, velocity, 0.03, accel, 2.5, math.Cos(math.Pi/2))
+	fmt.Printf("  Output = %.2f + %.2f + %.4f = %.3f\n",
+		0.5*velocity, 0.03*accel, 2.5*math.Cos(math.Pi/2), outputPi2)
+
+	fmt.Println("\nKey Points:")
+	fmt.Println("• Cosine compensation varies with arm angle")
+	fmt.Println("• Maximum torque at horizontal (cos(0°) = 1.0)")
+	fmt.Println("• Zero torque at vertical (cos(90°) = 0.0)")
+	fmt.Println("• Negative torque opposite side (cos(180°) = -1.0)")
+	fmt.Println("• Compensates for changing gravitational load")
 }

@@ -1,139 +1,108 @@
-// Package main demonstrates PID dampening features for noisy control systems.
+// Package main demonstrates PID derivative filtering to reduce derivative kick.
 //
-// This example shows how derivative filtering and stability threshold can improve
-// control performance in real-world scenarios with measurement noise and rapid
-// system changes.
+// This example shows how derivative filtering smooths the derivative term
+// to prevent sudden spikes when the setpoint changes.
 package main
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
 
 	"control/filter"
 	"control/pid"
 )
 
-// simulateNoisyMeasurement adds realistic sensor noise to a measurement
-func simulateNoisyMeasurement(actual float64, noiseLevel float64) float64 {
-	noise := (rand.Float64() - 0.5) * 2 * noiseLevel
-	return actual + noise
-}
-
-// simulateSystemResponse models a simple first-order system response
-func simulateSystemResponse(currentValue, controlOutput, timeStep float64) float64 {
-	// Simple exponential approach: x(t+1) = x(t) + (output * timeStep)
-	responseRate := 0.1 // How quickly system responds to control
-	return currentValue + (controlOutput * responseRate * timeStep)
-}
-
 func main() {
-	fmt.Println("PID Dampening Features Demonstration")
-	fmt.Println("===================================")
+	fmt.Println("PID Derivative Filtering (Dampening) Example")
+	fmt.Println("===========================================")
 
-	// Simulation parameters
-	targetValue := 100.0
-	initialValue := 20.0
-	noiseLevel := 2.0 // Sensor noise amplitude
-	timeStep := 0.1   // Time step in seconds
-	duration := 20.0  // Simulation duration in seconds
+	fmt.Println("Derivative Kick Reduction")
+	fmt.Println("-------------------------")
+	fmt.Println("Demonstrates how derivative filtering prevents sudden")
+	fmt.Println("spikes in control output during setpoint changes.")
+	fmt.Println()
 
-	// Create three PID controllers for comparison
-	basicPID := pid.New(2.0, 0.5, 0.8,
-		pid.WithOutputLimits(-50.0, 50.0),
-	)
+	// Create two controllers: one without filter, one with filter
+	pidNoFilter := pid.New(1.0, 0.1, 0.5)
 
-	filter1, _ := filter.NewLowPassFilter(0.4)
-	filteredPID := pid.New(2.0, 0.5, 0.8,
-		pid.WithFilter(filter1), // Low-pass filter derivative
-		pid.WithOutputLimits(-50.0, 50.0),
-	)
+	lowpassFilter, _ := filter.NewLowPassFilter(0.3)
+	pidWithFilter := pid.New(1.0, 0.1, 0.5,
+		pid.WithFilter(lowpassFilter))
 
-	filter2, _ := filter.NewLowPassFilter(0.4)
-	dampedPID := pid.New(2.0, 0.5, 0.8,
-		pid.WithFilter(filter2),         // Filter derivative noise
-		pid.WithStabilityThreshold(3.0), // Disable integral during instability
-		pid.WithOutputLimits(-50.0, 50.0),
-	)
+	fmt.Println("Controller Configuration:")
+	fmt.Println("  Both: Kp=1.0, Ki=0.1, Kd=0.5")
+	fmt.Println("  No Filter: Standard PID")
+	fmt.Println("  With Filter: Low-pass filter (alpha=0.3)")
+	fmt.Println()
 
-	// Initialize system states
-	basicValue := initialValue
-	filteredValue := initialValue
-	dampedValue := initialValue
+	// Test: Setpoint change from 0 to 100
+	fmt.Println("Test: Setpoint Change (0 → 100)")
+	fmt.Println("State starts at 0, setpoint suddenly changes to 100")
+	fmt.Printf("\n%-6s %-10s %-8s %-11s %-11s %-11s\n", "Step", "Setpoint", "State", "No Filter", "With Filter", "Diff")
+	fmt.Printf("%-6s %-10s %-8s %-11s %-11s %-11s\n", "----", "--------", "-----", "---------", "-----------", "----")
 
-	fmt.Printf("Target: %.1f, Initial: %.1f, Noise: ±%.1f\n", targetValue, initialValue, noiseLevel)
-	fmt.Println("Time\tBasic\tFiltered\tDamped\tB_Out\tF_Out\tD_Out")
-	fmt.Println("----\t-----\t--------\t------\t-----\t-----\t-----")
+	setpoint := 100.0
+	state := 0.0
+	dt := 0.1 // 100ms time step
 
-	steps := int(duration / timeStep)
+	// Initialize controllers with first measurement
+	pidNoFilter.Calculate(setpoint, state)
+	pidWithFilter.Calculate(setpoint, state)
 
-	for i := 0; i <= steps; i++ {
-		currentTime := float64(i) * timeStep
+	// First step: Large derivative kick
+	outNoFilter := pidNoFilter.CalculateWithDt(setpoint, state, dt)
+	outWithFilter := pidWithFilter.CalculateWithDt(setpoint, state, dt)
+	fmt.Printf("%-6d %-10.0f %-8.0f %-11.3f %-11.3f %-11.3f\n",
+		1, setpoint, state, outNoFilter, outWithFilter, outNoFilter-outWithFilter)
 
-		// Add measurement noise to all controllers
-		basicMeasurement := simulateNoisyMeasurement(basicValue, noiseLevel)
-		filteredMeasurement := simulateNoisyMeasurement(filteredValue, noiseLevel)
-		dampedMeasurement := simulateNoisyMeasurement(dampedValue, noiseLevel)
-
-		// Calculate control outputs
-		basicOutput := basicPID.Calculate(targetValue, basicMeasurement)
-		filteredOutput := filteredPID.Calculate(targetValue, filteredMeasurement)
-		dampedOutput := dampedPID.Calculate(targetValue, dampedMeasurement)
-
-		// Simulate system responses
-		basicValue = simulateSystemResponse(basicValue, basicOutput, timeStep)
-		filteredValue = simulateSystemResponse(filteredValue, filteredOutput, timeStep)
-		dampedValue = simulateSystemResponse(dampedValue, dampedOutput, timeStep)
-
-		// Print results every second
-		if i%int(1.0/timeStep) == 0 {
-			fmt.Printf("%.1f\t%.1f\t%.1f\t\t%.1f\t%.1f\t%.1f\t%.1f\n",
-				currentTime, basicValue, filteredValue, dampedValue,
-				basicOutput, filteredOutput, dampedOutput)
-		}
+	// Simulate state approaching setpoint
+	steps := []float64{20.0, 40.0, 60.0, 80.0, 90.0, 95.0, 98.0, 99.0, 100.0}
+	for i, s := range steps {
+		state = s
+		outNoFilter = pidNoFilter.CalculateWithDt(setpoint, state, dt)
+		outWithFilter = pidWithFilter.CalculateWithDt(setpoint, state, dt)
+		fmt.Printf("%-6d %-10.0f %-8.0f %-11.3f %-11.3f %-11.3f\n",
+			i+2, setpoint, state, outNoFilter, outWithFilter, outNoFilter-outWithFilter)
 	}
 
-	fmt.Println()
-	fmt.Println("Performance Analysis:")
-	fmt.Println("====================")
+	// Reset controllers and test setpoint decrease
+	pidNoFilter.Reset()
+	pidWithFilter.Reset()
 
-	// Calculate final errors
-	basicError := math.Abs(basicValue - targetValue)
-	filteredError := math.Abs(filteredValue - targetValue)
-	dampedError := math.Abs(dampedValue - targetValue)
+	fmt.Println("\nTest: Setpoint Decrease (100 → 50)")
+	fmt.Printf("\n%-6s %-10s %-8s %-11s %-11s %-11s\n", "Step", "Setpoint", "State", "No Filter", "With Filter", "Diff")
+	fmt.Printf("%-6s %-10s %-8s %-11s %-11s %-11s\n", "----", "--------", "-----", "---------", "-----------", "----")
 
-	fmt.Printf("Final Errors:\n")
-	fmt.Printf("  Basic PID:      %.2f (%.1f%% of target)\n", basicError, basicError/targetValue*100)
-	fmt.Printf("  Filtered PID:   %.2f (%.1f%% of target)\n", filteredError, filteredError/targetValue*100)
-	fmt.Printf("  Damped PID:     %.2f (%.1f%% of target)\n", dampedError, dampedError/targetValue*100)
+	setpoint = 50.0
+	state = 100.0
 
-	fmt.Println()
-	fmt.Println("Dampening Features Explained:")
-	fmt.Println("============================")
-	filterMsg := "Derivative Filter: Applies low-pass filtering to derivative term"
-	if filteredPID.GetFilter() != nil {
-		filterMsg = "Derivative Filter (enabled): Applies low-pass or kalman filtering to derivative term"
+	// Initialize
+	pidNoFilter.Calculate(setpoint, state)
+	pidWithFilter.Calculate(setpoint, state)
+
+	outNoFilter = pidNoFilter.CalculateWithDt(setpoint, state, dt)
+	outWithFilter = pidWithFilter.CalculateWithDt(setpoint, state, dt)
+	fmt.Printf("%-6d %-10.0f %-8.0f %-11.3f %-11.3f %-11.3f\n",
+		1, setpoint, state, outNoFilter, outWithFilter, outNoFilter-outWithFilter)
+
+	stepsDown := []float64{90.0, 80.0, 70.0, 60.0, 55.0, 52.0, 50.5, 50.0}
+	for i, s := range stepsDown {
+		state = s
+		outNoFilter = pidNoFilter.CalculateWithDt(setpoint, state, dt)
+		outWithFilter = pidWithFilter.CalculateWithDt(setpoint, state, dt)
+		fmt.Printf("%-6d %-10.0f %-8.0f %-11.3f %-11.3f %-11.3f\n",
+			i+2, setpoint, state, outNoFilter, outWithFilter, outNoFilter-outWithFilter)
 	}
-	fmt.Println(filterMsg)
-	fmt.Println("  - Reduces impact of high-frequency measurement noise")
-	fmt.Println("  - Smooths control output for more stable system response")
-	fmt.Println("  - Range: 0.0 (no filtering) to 1.0 (maximum filtering)")
 
-	fmt.Printf("\nStability Threshold (%.1f): Disables integral when derivative exceeds threshold\n", dampedPID.GetStabilityThreshold())
-	fmt.Println("  - Prevents integral windup during rapid system changes")
-	fmt.Println("  - Automatically re-enables when system stabilizes")
-	fmt.Println("  - Helps maintain control stability in dynamic conditions")
-
+	fmt.Println("\nAnalysis:")
+	fmt.Println("---------")
+	fmt.Println("Without filtering:")
+	fmt.Println("  • Large derivative kick on step 1 (setpoint change)")
+	fmt.Println("  • Derivative term reacts instantly to error changes")
+	fmt.Println("  • Can cause actuator saturation or system instability")
 	fmt.Println()
-	fmt.Println("When to Use Dampening:")
-	fmt.Println("======================")
-	fmt.Println("• Derivative Filter:")
-	fmt.Println("  - Noisy measurement sensors")
-	fmt.Println("  - High-frequency disturbances")
-	fmt.Println("  - Jerky control outputs")
-	fmt.Println()
-	fmt.Println("• Stability Threshold:")
-	fmt.Println("  - Systems with rapid setpoint changes")
-	fmt.Println("  - Aggressive tuning prone to overshoot")
-	fmt.Println("  - Variable system dynamics")
+	fmt.Println("With filtering (alpha=0.3):")
+	fmt.Println("  • First sample can match raw derivative (filter initialization)")
+	fmt.Println("  • Derivative builds up gradually over multiple steps")
+	fmt.Println("  • Smoother control output, better for real systems")
+	fmt.Println("  • Trade-off: Slightly slower response")
 }

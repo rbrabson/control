@@ -1043,3 +1043,147 @@ func calculateVariance(values []float64) float64 {
 	}
 	return variance / float64(len(values))
 }
+
+// TestCalculateWithDt tests the explicit time delta method for simulations
+func TestCalculateWithDt(t *testing.T) {
+	t.Run("Basic simulation with fixed dt", func(t *testing.T) {
+		pid := New(1.0, 0.1, 0.05)
+		dt := 0.01 // 10ms fixed time step
+
+		// First call should initialize
+		output := pid.CalculateWithDt(10.0, 0.0, dt)
+
+		// Should have proportional component
+		if output <= 0 {
+			t.Errorf("Expected positive output, got %f", output)
+		}
+
+		// Subsequent calls should show accumulation
+		var prevOutput float64
+		for i := 0; i < 10; i++ {
+			output = pid.CalculateWithDt(10.0, 0.0, dt)
+			if i > 0 && output <= prevOutput {
+				t.Errorf("Expected output to increase with integral accumulation")
+			}
+			prevOutput = output
+		}
+	})
+
+	t.Run("Deterministic simulation", func(t *testing.T) {
+		// Run simulation twice with same parameters - should get identical results
+		dt := 0.02
+		runs := 2
+		results := make([][]float64, runs)
+
+		for run := 0; run < runs; run++ {
+			pid := New(1.0, 0.5, 0.1)
+			results[run] = make([]float64, 50)
+
+			for i := 0; i < 50; i++ {
+				state := float64(i) * 0.1
+				results[run][i] = pid.CalculateWithDt(10.0, state, dt)
+			}
+		}
+
+		// Compare results - should be identical
+		for i := 0; i < 50; i++ {
+			if !almostEqual(results[0][i], results[1][i], 1e-10) {
+				t.Errorf("Simulation not deterministic at step %d: %f vs %f",
+					i, results[0][i], results[1][i])
+			}
+		}
+	})
+
+	t.Run("Variable dt simulation", func(t *testing.T) {
+		pid := New(2.0, 0.2, 0.1)
+
+		// Simulate with varying time steps
+		dts := []float64{0.01, 0.02, 0.015, 0.01, 0.025}
+
+		for i, dt := range dts {
+			output := pid.CalculateWithDt(5.0, float64(i)*0.5, dt)
+			if math.IsNaN(output) || math.IsInf(output, 0) {
+				t.Errorf("Invalid output at step %d with dt=%f: %f", i, dt, output)
+			}
+		}
+	})
+
+	t.Run("Spring-mass-damper simulation", func(t *testing.T) {
+		// Simulate a simple spring-mass-damper system
+		pid := New(50.0, 10.0, 15.0, WithOutputLimits(-100, 100))
+
+		dt := 0.001 // 1ms time step
+		target := 1.0
+		position := 0.0
+		velocity := 0.0
+		mass := 0.5
+
+		// Run simulation for 1 second
+		steps := 1000
+		for i := 0; i < steps; i++ {
+			// Get control output
+			force := pid.CalculateWithDt(target, position, dt)
+
+			// Update physics
+			acceleration := force / mass
+			velocity += acceleration * dt
+			position += velocity * dt
+
+			// Check output is bounded
+			if math.Abs(force) > 100 {
+				t.Errorf("Force exceeded limits: %f", force)
+			}
+		}
+
+		// After 1 second, should be reasonably close to target
+		if math.Abs(position-target) > 0.1 {
+			t.Errorf("System did not converge: position=%f, target=%f", position, target)
+		}
+	})
+
+	t.Run("Compare with real-time Calculate", func(t *testing.T) {
+		// CalculateWithDt should produce similar results to Calculate
+		// when dt matches actual elapsed time
+		pidRealTime := New(1.0, 0.1, 0.05)
+		pidSimulated := New(1.0, 0.1, 0.05)
+
+		// Initialize both
+		pidRealTime.Calculate(0.0, 0.0)
+
+		dt := 0.02       // 20ms
+		tolerance := 0.1 // Allow some difference due to timing variations
+
+		for i := 0; i < 10; i++ {
+			state := float64(i) * 0.5
+
+			// Real-time calculation
+			outputRealTime := pidRealTime.Calculate(10.0, state)
+			time.Sleep(time.Duration(dt*1000) * time.Millisecond)
+
+			// Simulated calculation
+			outputSimulated := pidSimulated.CalculateWithDt(10.0, state, dt)
+
+			// Results should be similar (not exact due to timing)
+			if i > 0 && math.Abs(outputRealTime-outputSimulated) > tolerance {
+				t.Logf("Difference at step %d: realtime=%f, simulated=%f (diff=%f)",
+					i, outputRealTime, outputSimulated, math.Abs(outputRealTime-outputSimulated))
+			}
+		}
+	})
+
+	t.Run("Zero dt handling", func(t *testing.T) {
+		pid := New(1.0, 0.5, 0.1)
+
+		// First call to initialize
+		pid.CalculateWithDt(10.0, 0.0, 0.01)
+
+		// Call with zero dt - derivative and integral should not accumulate
+		output1 := pid.CalculateWithDt(10.0, 5.0, 0.0)
+		output2 := pid.CalculateWithDt(10.0, 5.0, 0.0)
+
+		// Outputs should be identical since no time has passed
+		if output1 != output2 {
+			t.Errorf("Zero dt should produce identical outputs: %f vs %f", output1, output2)
+		}
+	})
+}
