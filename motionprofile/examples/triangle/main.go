@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"control/motionprofile"
@@ -48,15 +49,18 @@ func main() {
 		state := profile.Calculate(t)
 
 		// Determine which phase we're in
-		phase := ""
-		if t < totalTime/2 {
+		phase := "At rest"
+		switch {
+		case math.Abs(state.Acceleration) > 0.01 && state.Acceleration > 0:
 			phase = "Accel"
-		} else {
+		case math.Abs(state.Acceleration) > 0.01:
 			phase = "Decel"
+		case math.Abs(state.Velocity) > 0.01:
+			phase = "Cruise"
 		}
 
 		fmt.Printf("%-8.1f %-12.3f %-12.3f %-12.3f   %-11s\n",
-			state.Time, state.Position, state.Velocity, state.Acceleration, phase)
+			t, state.Position, state.Velocity, state.Acceleration, phase)
 
 		time.Sleep(150 * time.Millisecond)
 	}

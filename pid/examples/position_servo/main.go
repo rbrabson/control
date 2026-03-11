@@ -10,6 +10,19 @@ import (
 	"control/pid"
 )
 
+type servoPlant struct {
+	position float64
+	rate     float64
+	maxRate  float64
+	response float64
+}
+
+func (s *servoPlant) update(command, dt float64) {
+	desiredRate := command * s.maxRate
+	s.rate += (desiredRate - s.rate) * s.response * dt
+	s.position += s.rate * dt
+}
+
 func main() {
 	fmt.Println("Position Servo Control Example")
 	fmt.Println("==============================")
@@ -17,109 +30,101 @@ func main() {
 
 	fmt.Println("PID Position Tracking")
 	fmt.Println("--------------------")
-	fmt.Println("Demonstrates servo position control with PID.")
+	fmt.Println("Demonstrates closed-loop servo position control with a simple plant model.")
 	fmt.Println()
 
 	// Create PID controller for position
 	// Output is servo command (-1.0 to 1.0)
-	controller := pid.New(0.15, 0.05, 0.08,
+	controller := pid.New(0.07, 0.025, 0.02,
 		pid.WithOutputLimits(-1.0, 1.0))
 
 	fmt.Println("Controller Configuration:")
-	fmt.Println("  Kp = 0.15 (proportional gain)")
-	fmt.Println("  Ki = 0.05 (integral gain)")
-	fmt.Println("  Kd = 0.08 (derivative gain)")
+	fmt.Println("  Kp = 0.07 (proportional gain)")
+	fmt.Println("  Ki = 0.025 (integral gain)")
+	fmt.Println("  Kd = 0.02 (derivative gain)")
 	fmt.Println("  Output limits: -1.0 to 1.0 (servo command)")
 	fmt.Println()
+	fmt.Println("Plant Model: velocity-limited servo with first-order rate response")
+	fmt.Println("  maxRate = 120 deg/s, response = 8.0 1/s")
+	fmt.Println()
 
-	// Test: Move to target position
-	fmt.Println("Test: Move to Position 90°")
-	fmt.Printf("\n%-6s %-11s %-12s %-10s %-8s\n", "Step", "Target (°)", "Current (°)", "Error (°)", "Command")
-	fmt.Printf("%-6s %-11s %-12s %-10s %-8s\n", "----", "----------", "-----------", "---------", "-------")
+	dt := 0.05
 
-	targetPosition := 90.0
-	dt := 0.1
+	runScenario := func(title string, initialPosition, initialRate float64, steps int, targetAtStep func(step int) float64) {
+		plant := servoPlant{
+			position: initialPosition,
+			rate:     initialRate,
+			maxRate:  120.0,
+			response: 8.0,
+		}
 
-	// Simulated servo positions (approaching target)
-	currentPositions := []float64{
-		0.0, 20.0, 40.0, 55.0, 68.0, 78.0, 84.0, 87.5, 89.0, 89.8, 90.0,
-	}
-	controller.Calculate(targetPosition, currentPositions[0])
+		controller.Reset()
+		initialTarget := targetAtStep(0)
+		controller.CalculateWithDt(initialTarget, plant.position, dt)
 
-	for i, pos := range currentPositions {
-		command := controller.CalculateWithDt(targetPosition, pos, dt)
-		error := targetPosition - pos
+		fmt.Println(title)
+		fmt.Printf("\n%-6s %-8s %-11s %-12s %-10s %-10s %-10s\n", "Step", "Time", "Target (°)", "Current (°)", "Error (°)", "Command", "Rate (°/s)")
+		fmt.Printf("%-6s %-8s %-10s %-11s %-9s %-10s %-9s\n", "----", "----", "----------", "-----------", "---------", "-------", "---------")
 
-		fmt.Printf("%-6d %-11.0f %-12.1f %-10.1f %-8.3f\n",
-			i+1, targetPosition, pos, error, command)
-	}
+		for i := 0; i < steps; i++ {
+			target := targetAtStep(i)
+			command := controller.CalculateWithDt(target, plant.position, dt)
+			error := target - plant.position
 
-	// Test: Reverse direction
-	controller.Reset()
+			if i%4 == 0 || i == steps-1 {
+				fmt.Printf("%-6d %-8.2f %-11.1f %-12.2f %-10.2f %-10.3f %-10.2f\n",
+					i+1, float64(i+1)*dt, target, plant.position, error, command, plant.rate)
+			}
 
-	fmt.Println("\nTest: Return to Position 30°")
-	fmt.Printf("\n%-6s %-11s %-12s %-10s %-8s\n", "Step", "Target (°)", "Current (°)", "Error (°)", "Command")
-	fmt.Printf("%-6s %-11s %-12s %-10s %-8s\n", "----", "----------", "-----------", "---------", "-------")
+			plant.update(command, dt)
+		}
 
-	targetPosition = 30.0
-
-	// Servo moving back from 90 to 30
-	positionsBack := []float64{
-		90.0, 75.0, 60.0, 48.0, 38.0, 32.5, 30.5, 30.0,
-	}
-	controller.Calculate(targetPosition, positionsBack[0])
-
-	for i, pos := range positionsBack {
-		command := controller.CalculateWithDt(targetPosition, pos, dt)
-		error := targetPosition - pos
-
-		fmt.Printf("%-6d %-11.0f %-12.1f %-10.1f %-8.3f\n",
-			i+1, targetPosition, pos, error, command)
+		fmt.Println()
 	}
 
-	// Test: Small adjustment
-	controller.Reset()
+	runScenario(
+		"Test 1: Move to Position 90°",
+		0.0,
+		0.0,
+		320,
+		func(step int) float64 { return 90.0 },
+	)
 
-	fmt.Println("\nTest: Small Adjustment (30° → 35°)")
-	fmt.Printf("\n%-6s %-11s %-12s %-10s %-8s\n", "Step", "Target (°)", "Current (°)", "Error (°)", "Command")
-	fmt.Printf("%-6s %-11s %-12s %-10s %-8s\n", "----", "----------", "-----------", "---------", "-------")
+	runScenario(
+		"Test 2: Return to Position 30°",
+		90.0,
+		0.0,
+		300,
+		func(step int) float64 { return 30.0 },
+	)
 
-	targetPosition = 35.0
-
-	// Fine positioning
-	finePositions := []float64{
-		30.0, 31.5, 33.0, 34.0, 34.7, 35.0,
-	}
-	controller.Calculate(targetPosition, finePositions[0])
-
-	for i, pos := range finePositions {
-		command := controller.CalculateWithDt(targetPosition, pos, dt)
-		error := targetPosition - pos
-
-		fmt.Printf("%-6d %-11.0f %-12.1f %-10.1f %-8.3f\n",
-			i+1, targetPosition, pos, error, command)
-	}
+	runScenario(
+		"Test 3: Small Adjustment (30° -> 35°)",
+		30.0,
+		0.0,
+		50,
+		func(step int) float64 { return 35.0 },
+	)
 
 	fmt.Println("\nAnalysis:")
 	fmt.Println("---------")
 	fmt.Println()
-	fmt.Println("Large movement (0° → 90°):")
-	fmt.Println("  • Strong initial command (high error)")
-	fmt.Println("  • Command decreases as position approaches target")
-	fmt.Println("  • D term helps slow down near target")
+	fmt.Println("Large movement (0° -> 90°):")
+	fmt.Println("  • Command saturates early to accelerate quickly")
+	fmt.Println("  • As position approaches target, command tapers and the rate decreases")
+	fmt.Println("  • Rate column shows actuator speed limiting and response lag")
 	fmt.Println()
-	fmt.Println("Reverse movement (90° → 30°):")
-	fmt.Println("  • Negative command for opposite direction")
-	fmt.Println("  • Same control behavior, different direction")
+	fmt.Println("Reverse movement (90° -> 30°):")
+	fmt.Println("  • Controller commands negative torque to decelerate and reverse direction")
+	fmt.Println("  • The rate state transitions smoothly through zero as the servo changes direction")
 	fmt.Println()
-	fmt.Println("Fine adjustment (30° → 35°):")
-	fmt.Println("  • Smaller commands for small errors")
-	fmt.Println("  • Precise positioning capability")
-	fmt.Println("  • I term ensures reaching exact target")
+	fmt.Println("Fine adjustment (30° -> 35°):")
+	fmt.Println("  • Smaller error yields much smaller command than large-setpoint moves")
+	fmt.Println("  • PID settles with low residual rate and small steady-state error")
 	fmt.Println()
 	fmt.Println("Key Points:")
 	fmt.Println("  • P term provides position correction force")
 	fmt.Println("  • I term eliminates positioning error")
-	fmt.Println("  • D term prevents overshoot")
+	fmt.Println("  • D term damps fast command changes near target")
 	fmt.Println("  • Output limits protect servo mechanics")
 }

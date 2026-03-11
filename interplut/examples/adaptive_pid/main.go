@@ -69,7 +69,8 @@ func main() {
 	initialKi, _ := iCoefficients.Get(0.0)
 	initialKd, _ := dCoefficients.Get(0.0)
 	controller := pid.New(initialKp, initialKi, initialKd)
-	controller.SetOutputLimits(-10.0, 10.0)
+	controller.SetOutputLimits(-250.0, 250.0)
+	simulationDt := 0.02
 
 	fmt.Printf("\n✓ Single adaptive PID controller created with initial gains: Kp=%.2f, Ki=%.2f, Kd=%.2f\n",
 		initialKp, initialKi, initialKd)
@@ -157,8 +158,10 @@ func main() {
 	}
 
 	// Demonstrate how control output varies with same error using single controller
-	fmt.Println("\nControl Output Comparison (same 10° error, single adaptive controller):")
+	fmt.Printf("\nControl Output Comparison (same 10° error, %.0fms step):\n", simulationDt*1000)
 	fmt.Println("======================================================================")
+	fmt.Println("Each row resets the controller first, so the first sample has no derivative kick.")
+	fmt.Println("That makes the displayed output primarily proportional plus one timestep of integral action.")
 	fmt.Printf("%-10s %-8s %-7s %-6s %-6s %-8s %-27s\n", "Position", "Error", "Kp", "Ki", "Kd", "Output", "Notes")
 	fmt.Printf("%-10s %-8s %-7s %-6s %-6s %-8s %-27s\n", "--------", "-----", "--", "--", "--", "------", "-----")
 
@@ -173,8 +176,8 @@ func main() {
 		controller.SetGains(Kp, Ki, Kd)
 		controller.Reset() // Reset state for clean comparison
 
-		// Calculate control output for the same error at different positions
-		output := controller.Calculate(pos.angle+testError, pos.angle)
+		// Use a fixed simulation step so outputs are deterministic and non-zero.
+		output := controller.CalculateWithDt(pos.angle+testError, pos.angle, simulationDt)
 
 		fmt.Printf("%-10.1f %-8.1f %-7.2f %-6.2f %-6.2f %-8.2f %-27s\n",
 			pos.angle, testError, Kp, Ki, Kd, output, pos.notes)
@@ -206,8 +209,9 @@ func main() {
 	}
 
 	// Demonstrate controller reuse in a simulated control loop
-	fmt.Println("\nSimulated Control Loop (Single Controller, Dynamic Gains):")
+	fmt.Printf("\nSimulated Control Loop (Single Controller, Dynamic Gains, %.0fms step):\n", simulationDt*1000)
 	fmt.Println("=========================================================")
+	fmt.Println("When gains change enough to trigger a reset, the next sample starts with cleared controller history.")
 	fmt.Printf("%-6s %-8s %-8s %-7s %-6s %-6s %-7s %-8s\n", "Step", "Arm Pos", "Target", "Kp", "Ki", "Kd", "Reset", "Output")
 	fmt.Printf("%-6s %-8s %-8s %-7s %-6s %-6s %-7s %-8s\n", "----", "-------", "------", "--", "--", "--", "-----", "------")
 
@@ -239,8 +243,8 @@ func main() {
 			controller.SetGains(Kp, Ki, Kd)
 		}
 
-		// Calculate control output
-		output := controller.Calculate(target, armPos)
+		// Calculate control output with a fixed timestep for stable, meaningful output.
+		output := controller.CalculateWithDt(target, armPos, simulationDt)
 
 		fmt.Printf("%-6d %-8.1f %-8.1f %-7.2f %-6.2f %-6.2f %-7s %-8.2f\n",
 			step+1, armPos, target, Kp, Ki, Kd, reset, output)
@@ -250,6 +254,7 @@ func main() {
 	fmt.Println("• Single controller instance reused throughout operation")
 	fmt.Println("• Dynamic gain updates using SetGains() method")
 	fmt.Println("• Controller reset only when gains change significantly")
+	fmt.Println("• First sample after reset has zero derivative history by design")
 	fmt.Println("• Optimal control performance across entire operating range")
 	fmt.Println("• Smooth coefficient transitions prevent control discontinuities")
 	fmt.Println("• Easy to tune - just set coefficients at key operating points")

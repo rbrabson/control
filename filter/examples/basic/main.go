@@ -30,16 +30,16 @@ func main() {
 	rand.Seed(42)
 
 	// Create Kalman filter
-	// Q (process noise): 0.01 - low process noise (signal changes slowly)
-	// R (measurement noise): 0.5 - moderate measurement noise
-	// N (history size): 5 - use 5 recent estimates for linear regression
-	kf, err := filter.NewKalmanFilter(0.01, 0.5, 5)
+	// Q (process noise): 0.20 - allows faster adaptation to changing trend
+	// R (measurement noise): 0.50 - moderate measurement noise
+	// N (history size): 3 - shorter history reduces lag on changing signals
+	kf, err := filter.NewKalmanFilter(0.20, 0.5, 3)
 	if err != nil {
 		fmt.Printf("Error creating Kalman filter: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Filter Parameters: Q=%.2f, R=%.2f, N=%d\n", 0.01, 0.5, 5)
+	fmt.Printf("Filter Parameters: Q=%.2f, R=%.2f, N=%d\n", 0.20, 0.5, 3)
 	fmt.Printf("Kalman Gain (K): %.4f\n", kf.GetK())
 	fmt.Printf("Error Covariance (P): %.4f\n\n", kf.GetP())
 
@@ -98,6 +98,8 @@ func main() {
 		fmt.Printf("Error Reduction:           %.1f%%\n", -errorChangePercent)
 	} else {
 		fmt.Printf("Error Increase:            %.1f%%\n", errorChangePercent)
+		fmt.Println("This run favors smoothing over responsiveness.")
+		fmt.Println("Try increasing Q or reducing N for faster tracking of changing signals.")
 	}
 
 	fmt.Println()

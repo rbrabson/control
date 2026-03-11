@@ -122,10 +122,14 @@ func (mp *MotionProfile) calculateProfile() {
 func (mp *MotionProfile) Calculate(t float64) State {
 	// Clamp time to profile bounds
 	if t <= 0 {
-		return mp.initial
+		state := mp.initial
+		state.Time = 0
+		return state
 	}
 	if t >= mp.totalTime {
-		return mp.goal
+		state := mp.goal
+		state.Time = mp.totalTime
+		return state
 	}
 
 	direction := 1.0
