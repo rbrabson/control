@@ -23,10 +23,9 @@ func main() {
 
 	// Create controller with gravity compensation
 	ff := feedforward.New(
-		0.05,                              // kS: static friction
-		1.2,                               // kV: velocity gain
-		0.08,                              // kA: acceleration gain
-		feedforward.WithGravityGain(9.81), // kG: gravity (9.81 m/s²)
+		9.86, // kS: static friction
+		1.2,  // kV: velocity gain
+		0.08, // kA: acceleration gain
 	)
 
 	fmt.Println("Controller Configuration:")

@@ -24,14 +24,12 @@ func main() {
 	// Create all four controller types
 	ffBasic := feedforward.New(0.1, 0.8, 0.05)
 
-	ffGravity := feedforward.New(0.1, 0.8, 0.05,
-		feedforward.WithGravityGain(5.0))
+	ffGravity := feedforward.New(5.1, 0.8, 0.05)
 
 	ffCosine := feedforward.New(0.1, 0.8, 0.05,
 		feedforward.WithCosineGain(3.0))
 
-	ffCombined := feedforward.New(0.1, 0.8, 0.05,
-		feedforward.WithGravityGain(5.0),
+	ffCombined := feedforward.New(5.1, 0.8, 0.05,
 		feedforward.WithCosineGain(3.0))
 
 	fmt.Println("Controller Configurations:")

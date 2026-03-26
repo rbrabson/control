@@ -24,11 +24,10 @@ func main() {
 
 	// Create controller with BOTH compensations
 	ffCombined := feedforward.New(
-		0.08,                              // kS: static friction
-		1.5,                               // kV: velocity gain
-		0.12,                              // kA: acceleration gain
-		feedforward.WithGravityGain(15.0), // kG: heavy load
-		feedforward.WithCosineGain(8.0),   // kCos: boom angle
+		15.08,                           // kS: static friction
+		1.5,                             // kV: velocity gain
+		0.12,                            // kA: acceleration gain
+		feedforward.WithCosineGain(8.0), // kCos: boom angle
 	)
 
 	// Create basic controller for comparison

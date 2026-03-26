@@ -23,8 +23,7 @@ func main() {
 
 	// Create controller with kS=0.0, kV=2.0, kA=3.0
 	// and add gravity gain=5.0, cosine gain=2.0
-	ff := feedforward.New(0.0, 2.0, 3.0,
-		feedforward.WithGravityGain(5.0),
+	ff := feedforward.New(5.0, 2.0, 3.0,
 		feedforward.WithCosineGain(2.0),
 	)
 
